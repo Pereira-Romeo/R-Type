@@ -7,7 +7,7 @@ on:
 jobs:
   push_to_mirror:
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner }} != 'EpitechPGE3-2026'
+    if: github.repository_owner != 'EpitechPGE3-2026'
     steps:
       - name: checkout for push to mirror
         uses: actions/checkout@v4
