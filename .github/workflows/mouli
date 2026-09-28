@@ -1,0 +1,44 @@
+name: Auto_Tests
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  check_program_compilation:
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    steps:
+      - name: checkout to compile code
+        uses: actions/checkout@v4
+
+      - name: compile project
+        run: make
+        timeout-minutes: 2
+
+      - name: clean project
+        run: make clean
+
+      - name: check presence of rights executables
+        run: |
+          for exe in $(echo ${{ vars.EXECUTABLES }} | sed "s/,/ /g"); do
+            if [ ! -x "$exe" ]; then
+              echo "Executable $exe not found or not executable"
+              exit 1
+            fi
+          done
+
+  run_tests:
+    needs: [check_program_compilation]
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    steps:
+      - name: checkout for tests
+        uses: actions/checkout@v4
+
+      - name: test program
+        run: make test_run
+        timeout-minutes: 2
+
