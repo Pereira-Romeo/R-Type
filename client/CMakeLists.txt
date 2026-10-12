@@ -9,6 +9,6 @@ find_package(SDL3 REQUIRED CONFIG)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(r-type_client ${SOURCES}
-        include/Menu.hpp)
+        include/MainMenu.hpp)
 target_include_directories(r-type_client PRIVATE src)
 target_link_libraries(r-type_client PRIVATE SDL3::SDL3)

@@ -10,7 +10,8 @@
 #include <SDL3/SDL.h>
 #include <memory>
 
-#include "Menu.hpp"
+#include "MainMenu.hpp"
+#include "MenuSettings.hpp"
 #include "Player.hpp"
 
 namespace client
@@ -31,7 +32,7 @@ namespace client
             void update(float dt);
             void render();
 
-            enum class State { Menu, Playing };
+            enum class State { Menu, Playing, Settings };
 
             struct WindowDeleter {void operator()(SDL_Window *w) const { SDL_DestroyWindow(w); } };
             struct RendererDeleter { void operator()(SDL_Renderer *r) const { SDL_DestroyRenderer(r); } };
@@ -44,6 +45,7 @@ namespace client
             bool _running = true;
             Player _player{100.0f, WINDOW_HEIGHT / 2.0f};
             State _state = State::Menu;
-            Menu _menu{WINDOW_WIDTH, WINDOW_HEIGHT};
+            MainMenu _menu{WINDOW_WIDTH, WINDOW_HEIGHT};
+            MenuSettings _menu_settings{WINDOW_WIDTH, WINDOW_HEIGHT};
     };
 }
