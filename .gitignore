@@ -1,0 +1,20 @@
+# Build
+build/
+cmake-build-*/
+compile_commands.json
+
+# Binaries
+r-type_client
+r-type_server
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
