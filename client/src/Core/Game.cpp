@@ -57,11 +57,26 @@ namespace client
                 _running = false;
 
             if (_state == State::Menu) {
-                MenuAction action = _menu.handleEvent(event);
-                if (action == MenuAction::Play)
+                MainMenuAction action = _menu.handleEvent(event);
+                if (action == MainMenuAction::Play)
                     _state = State::Playing;
-                else if (action == MenuAction::Quit)
+                else if (action == MainMenuAction::Settings)
+                    _state = State::Settings;
+                else if (action == MainMenuAction::Quit)
                     _running = false;
+            }
+            if (_state == State::Settings) {
+                MenuSettingsAction action = _menu_settings.handleEvent(event);
+                if (action == MenuSettingsAction::Volume)
+                    printf("Volume\n");
+                else if (action == MenuSettingsAction::Fullscreen)
+                    printf("Fullscreen\n");
+                else if (action == MenuSettingsAction::BigWindowed)
+                    printf("Fullscreen\n");
+                else if (action == MenuSettingsAction::SmallWindowed)
+                    printf("SmallWindowed\n");
+                else if (action == MenuSettingsAction::Return)
+                    _state = State::Menu;
             }
         }
     }
@@ -82,6 +97,8 @@ namespace client
 
         if (_state == State::Menu)
             _menu.render(_renderer.get());
+        else if (_state == State::Settings)
+            _menu_settings.render(_renderer.get());
         else
             _player.render(_renderer.get());
 

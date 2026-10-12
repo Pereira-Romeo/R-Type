@@ -2,14 +2,14 @@
 ** EPITECH PROJECT, 2026
 ** R_Type
 ** File description:
-** Menu
+** MainMenu
 */
 
-#include "../../include/Menu.hpp"
+#include "../../include/MainMenu.hpp"
 
 namespace client
 {
-    Menu::Menu(float screenWidth, float screenHeight) : _screenWidth(screenWidth)
+    MainMenu::MainMenu(float screenWidth, float screenHeight) : _screenWidth(screenWidth)
     {
         const float width = 300.0f;
         const float height = 60.0f;
@@ -17,12 +17,14 @@ namespace client
         const float x = (screenWidth - width) / 2.0f;
         float y = screenHeight / 2.0f;
 
-        _buttons.push_back({"PLAY", MenuAction::Play, {x, y, width, height}});
+        _buttons.push_back({"PLAY", MainMenuAction::Play, {x, y, width, height}});
         y += height + spacing;
-        _buttons.push_back({"QUIT", MenuAction::Quit, {x, y, width, height}});
+        _buttons.push_back({"SETTINGS", MainMenuAction::Settings, {x, y, width, height}});
+        y += height + spacing;
+        _buttons.push_back({"QUIT", MainMenuAction::Quit, {x, y, width, height}});
     }
 
-    MenuAction Menu::handleEvent(const SDL_Event &event)
+    MainMenuAction MainMenu::handleEvent(const SDL_Event &event)
     {
         if (event.type == SDL_EVENT_KEY_DOWN) {
             switch (event.key.key) {
@@ -53,10 +55,10 @@ namespace client
                     return button.action;
         }
 
-        return MenuAction::None;
+        return MainMenuAction::None;
     }
 
-    void Menu::render(SDL_Renderer *renderer) const
+    void MainMenu::render(SDL_Renderer *renderer) const
     {
         SDL_FRect titleArea = {0.0f, 120.0f, _screenWidth, 80.0f};
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -81,7 +83,7 @@ namespace client
         }
     }
 
-    void Menu::drawCenteredText(SDL_Renderer *renderer, const std::string &text,
+    void MainMenu::drawCenteredText(SDL_Renderer *renderer, const std::string &text,
         const SDL_FRect &area, float scale) const
     {
         const float charSize = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * scale;
