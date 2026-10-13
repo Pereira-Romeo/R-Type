@@ -16,23 +16,39 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec)
 namespace ECS
 {
 
+    /**
+     * Storage class to be used in the ECS. Its main advantages are :
+     *  - that it owns all of the components, thus avoiding ownership troubles. Getting components is done through using an entity id
+     *  - it allows for O(1) lookups, adding and deletion
+     *  - it keeps actual data contiguous, making it cache friendly
+     */
     template <typename T>
     class SparseSet : public ISparseSet
     {
     private:
-        // null element, normally unreachable
+        /**
+         * Null element, not reachable
+         */
         static constexpr size_t null_index = std::numeric_limits<size_t>::max();
 
-        // paginated list of indexes. indexes are stocked at the right spot for entities
+        /**
+         *List of indexes. indexes are stocked at the right spot for entities
+         */
         std::vector<size_t> _sparse_list;
 
-        // list of corresponding indexes, making it possible to look up splist index from dlist
+        /**
+         * list of corresponding indexes, making it possible to look up splist index from dlist
+         */
         std::vector<size_t> _dense_indexes;
 
-        // actual list that holds the objects
+        /**
+         * Actual list that holds the objects
+         */
         std::vector<T> _dense_list;
 
-        // max size of the sparse set
+        /**
+         * Max size of the sparse set
+         */
         size_t _capacity;
 
         /**
@@ -142,17 +158,18 @@ namespace ECS
             }
         }
 
-        /*
-        Swap element at index in dense list with last one, update the sparse list with new index, and pop the last element of the dense list
-        */
+        /**
+         * Cleanly removes a compoment from an entity using a move and pop method in order to keep memory contiguous and avoid memory reallocation issues.
+         * @param to_delete Entity id owning the element to remove
+         */
         void unset(size_t to_delete) override
         {
             if (_dense_list.empty() || to_delete >= _capacity || _sparse_list[to_delete] == null_index)
                 return;
 
             size_t delete_index = get_dense_index(to_delete); /// equivalent to _sparse_list[to_delete]
-            size_t move_index = _dense_list.size() - 1; /// equivalent to _sparse_list[move_index]
-            size_t to_move = _dense_indexes[move_index]; /// equivalent to entity id owning the last element of the dense_list
+            size_t move_index = _dense_list.size() - 1;       /// equivalent to _sparse_list[move_index]
+            size_t to_move = _dense_indexes[move_index];      /// equivalent to entity id owning the last element of the dense_list
 
             if (delete_index != move_index)
             {
@@ -173,9 +190,11 @@ namespace ECS
             _dense_list.pop_back();
         }
 
-        /*
-        get the element at index, then return the actual element from the dense list
-        */
+        /**
+         * Returns a pointer to the element associated with the entity id. If no component is attached or id is invalid, returns nullptr.
+         * @param index Entity index
+         * @return Pointer to resource
+         */
         T *at(size_t index)
         {
             if (index >= _capacity || _sparse_list[index] == null_index)
@@ -183,22 +202,28 @@ namespace ECS
             return &_dense_list[_sparse_list[index]];
         }
 
-        /*
-        Checks if the entity has a component in this given set
-        */
+        /**
+         * Returns true if a component is attached to the given entity id.
+         * @param id Entity index
+         */
         bool contains_index(size_t id) const override
         {
             return get_dense_index(id) != null_index;
         }
 
-        /*
-        Get a copy of indexes of all entities that have components registered into the SparseSet. Be careful, for optimisation's sake, the end of the vector might contain null_index elements that should be ignored.
-        */
+        /**
+         * Get a copy of indexes of all entities that have components registered into the SparseSet.
+         * @return Vector of entity ids
+         */
         std::vector<size_t> get_index_list() const override
         {
             return _dense_indexes;
         }
 
+        /**
+         * Dump the SparseSet data onto a given stream. If this is used, the templated type should have an existing operator<< overload.
+         * @param os Stream to be written to
+         */
         std::ostream &print(std::ostream &os) const
         {
             os << "SPLIST INDEX\t | DLIST INDEX\t\t\t|" << std::endl;
