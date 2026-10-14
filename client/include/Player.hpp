@@ -8,6 +8,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include "FrameBufferHandler.hpp"
 
 namespace client
 {
@@ -18,6 +19,7 @@ namespace client
             void handleInput(const bool *keys);
             void update(float dt, float screenWidth, float screenHeight);
             void render(SDL_Renderer *renderer) const;
+            void ManageInput(void);
 
             SDL_FRect getHitbox() const;
 
@@ -29,5 +31,8 @@ namespace client
             float _speed = 400.0f;
             float _width = 60.0f;
             float _height = 30.0f;
+            std::string _input;
+
+            FrameBufferHandler* _handler = new FrameBufferHandler();
     };
 }
