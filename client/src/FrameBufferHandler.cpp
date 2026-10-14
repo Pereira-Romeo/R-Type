@@ -5,7 +5,7 @@
 ** FrameBufferHandler
 */
 
-#include "./FrameBufferHandler.hpp"
+#include "../include/FrameBufferHandler.hpp"
 
 FrameBufferHandler::FrameBufferHandler()
 {}
@@ -46,6 +46,8 @@ void FrameBufferHandler::Delay(std::string data)
         history =  idhistory < 0 ? 0 : idhistory;
     }
 
+    //std::cout << "delay: " << currFrame << " "  << data << std::endl;
+
     frameData_t newData = {currFrame + DELAY, std::vector<std::string>()};
     newData.datas.emplace_back(data);
     framesBuff[currFrame % MAX_FRAMES] = newData;
@@ -76,8 +78,13 @@ bool FrameBufferHandler::Rollback(frameData_t data)
 std::string FrameBufferHandler::Read()
 {
     int newRead = read + 1;          // numéro absolu, plus de modulo
+    //std::cout << "read: " << newRead << " ";
     if (newRead > currFrame)         // on ne lit pas plus loin que ce qui est écrit
         return std::string("");
     read = newRead;
-    return framesBuff[read % MAX_FRAMES].datas[0];
+    if (!framesBuff[read % MAX_FRAMES].datas.empty()) {
+        //std::cout << "data: "  << framesBuff[read % MAX_FRAMES].datas[0] << std::endl;
+        return framesBuff[read % MAX_FRAMES].datas[0];
+    }
+    return std::string("nd");
 }
