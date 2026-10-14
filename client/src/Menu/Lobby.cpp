@@ -95,7 +95,6 @@ namespace client
 
     void Lobby::loadFakePlayers()
     {
-        // Fausses données : plus tard, elles viendront du message ROOM_STATE du serveur
         _players.clear();
         if (_context.isHost) {
             _players.push_back({_context.playerName, false, true, true});
