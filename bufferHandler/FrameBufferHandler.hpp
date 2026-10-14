@@ -35,6 +35,6 @@ class FrameBufferHandler {
         void Delay(std::string data);
         bool Rollback(frameData_t data);
         void updateFrame() {currFrame++;};
-        void Read();
+        std::string Read();
         void Display();
 };
