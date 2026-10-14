@@ -16,7 +16,7 @@ namespace client
     class MenuSettings : public IScene {
 
         public:
-            MenuSettings(SceneManager &scenes, float screenWidth, float screenHeight);
+            MenuSettings(SceneManager &scenes, float screenWidth, float screenHeight, SDL_Window* window);
 
             void onLoad() override;
             void onUnload() override;
@@ -25,8 +25,10 @@ namespace client
             void render(SDL_Renderer *renderer) override;
 
         private:
+            SDL_Window* _window;
             SceneManager &_scenes;
             ButtonList _buttons;
+            bool is_fullscreen;
             float _screenWidth;
     };
 }

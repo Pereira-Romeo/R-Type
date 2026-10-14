@@ -18,3 +18,7 @@ r-type_server
 
 # OS
 .DS_Store
+.cache/
+.vscode/
+
+launch_rtype_client.sh
