@@ -73,11 +73,11 @@ bool FrameBufferHandler::Rollback(frameData_t data)
     return true;
 }
 
-void FrameBufferHandler::Read()
+std::string FrameBufferHandler::Read()
 {
     int newRead = read + 1;          // numéro absolu, plus de modulo
     if (newRead > currFrame)         // on ne lit pas plus loin que ce qui est écrit
-        return;
+        return std::string("");
     read = newRead;
+    return framesBuff[read % MAX_FRAMES].datas[0];
 }
-
