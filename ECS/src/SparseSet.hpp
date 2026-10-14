@@ -1,17 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <algorithm>
 #include <limits>
 #include "ISparseSet.hpp"
-
-template <typename T>
-std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec)
-{
-    for (auto &elem : vec)
-        os << "\t" << elem;
-    return os;
-}
 
 namespace ECS
 {
@@ -117,6 +108,7 @@ namespace ECS
         {
             _sparse_list.clear();
             _dense_indexes.clear();
+            std::fill()
             _dense_list.clear();
         }
 
