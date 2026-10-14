@@ -46,7 +46,7 @@ namespace client
             _scenes.switchScene("playmenu");
             return;
         }
-        // Si le champ a utilisé l'événement (frappe, Entrée...), les boutons ne le reçoivent pas
+
         if (_codeField.handleEvent(event))
             return;
         _buttons.handleEvent(event);

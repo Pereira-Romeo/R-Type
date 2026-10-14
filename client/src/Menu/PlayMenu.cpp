@@ -58,7 +58,6 @@ namespace client
     {
         sendToServer("CREATE_ROOM player=" + _context.playerName);
 
-        // Plus tard, c'est le serveur qui générera le code de la room
         static const std::string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         static std::mt19937 rng{std::random_device{}()};
         std::uniform_int_distribution<std::size_t> dist(0, chars.size() - 1);
