@@ -16,14 +16,13 @@
 #define DELAY 2
 #define MAX_FRAMES 10
 
+typedef struct frameData_s {
+    int frame = 0;
+    std::vector<std::string> datas;
+} frameData_t;
+
 class FrameBufferHandler {
     private:
-
-        typedef struct frameData_s {
-            int frame = 0;
-            std::vector<std::string> datas;
-        } frameData_t;
-
         std::array<frameData_t, MAX_FRAMES> framesBuff = std::array<frameData_t, MAX_FRAMES>();
         int read = 0; // tete decriture
         int write = 0; // tete de lecture
@@ -36,6 +35,6 @@ class FrameBufferHandler {
         void Delay(std::string data);
         bool Rollback(frameData_t data);
         void updateFrame() {currFrame++;};
-
+        void Read();
         void Display();
 };

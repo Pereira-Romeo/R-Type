@@ -25,6 +25,8 @@ void FrameBufferHandler::Display()
             std::cout << " <- curr";
         if (i == history % MAX_FRAMES)
             std::cout << " <- historique";
+        if (i == read % MAX_FRAMES)
+            std::cout << " <- read";
 
         std::cout << " : frame " << framesBuff[i].frame << " | ";
 
@@ -49,12 +51,33 @@ void FrameBufferHandler::Delay(std::string data)
     framesBuff[currFrame % MAX_FRAMES] = newData;
 }
 
+
 bool FrameBufferHandler::Rollback(frameData_t data)
 {
-    // if (data.frame <= currFrame)
-    //     return false;
-    
-    // framesBuff[(data.frame - DELAY) % MAX_FRAMES].datas.emplace_back(data);
-    
-    // return true;
+    int slot = data.frame - DELAY;
+
+    if (slot < 0 || data.frame >= currFrame
+        || data.frame < framesBuff[history % MAX_FRAMES].frame)
+        return false;
+
+    frameData_t& cur = framesBuff[slot % MAX_FRAMES];
+
+    if (cur.frame == data.frame) {
+        cur.datas.insert(cur.datas.end(),
+                        data.datas.begin(),
+                        data.datas.end());
+    } else {
+        cur = data;
+    }
+
+    return true;
 }
+
+void FrameBufferHandler::Read()
+{
+    int newRead = read + 1;          // numéro absolu, plus de modulo
+    if (newRead > currFrame)         // on ne lit pas plus loin que ce qui est écrit
+        return;
+    read = newRead;
+}
+
