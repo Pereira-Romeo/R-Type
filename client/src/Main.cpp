@@ -1,14 +1,14 @@
 /*
 ** EPITECH PROJECT, 2026
-** R-Type
-** File description:
+** RType
+** file description:
 ** Main
 */
 
 #include "../include/Game.hpp"
 #include <iostream>
 
-int main()
+int main(void)
 {
     try {
         client::Game game;
