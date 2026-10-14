@@ -1,48 +1,41 @@
 /*
 ** EPITECH PROJECT, 2026
-** R-Type
+** R_Type
 ** File description:
-** Scene Manager
+** SceneManager
 */
 
 #pragma once
 
+#include <SDL3/SDL.h>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
 #include "IScene.hpp"
 
-class SceneManager {
-    private:
-        std::unordered_map<std::string, std::unique_ptr<IScene>> scenes;
-        IScene* currentScene = nullptr;
+namespace client
+{
+    class SceneManager {
+        public:
+            void addScene(const std::string &name, std::unique_ptr<IScene> scene);
 
-    public:
-        void addScene(const std::string& name, std::unique_ptr<IScene> scene) {
-            scenes[name] = std::move(scene);
-        }
+            void switchScene(const std::string &name);
 
-        void switchScene(const std::string& name) {
-            auto it = scenes.find(name);
-            if (it != scenes.end()) {
-                if (currentScene) {
-                    currentScene->onUnload();
-                }
-                currentScene = it->second.get();
-                currentScene->onLoad();
-            }
-        }
+            void requestQuit();
+            bool shouldQuit() const;
 
-        void update(float deltaTime) {
-            if (currentScene) {
-                currentScene->update(deltaTime);
-            }
-        }
+            void handleEvent(const SDL_Event &event);
+            void update(float deltaTime);
+            void render(SDL_Renderer *renderer);
 
-        void render() {
-            if (currentScene) {
-                currentScene->render();
-            }
-        }
-};
+        private:
+            void applyPendingScene();
+
+            std::unordered_map<std::string, std::unique_ptr<IScene>> _scenes;
+            IScene *_currentScene = nullptr;
+            std::optional<std::string> _pendingScene;
+            bool _quitRequested = false;
+    };
+}

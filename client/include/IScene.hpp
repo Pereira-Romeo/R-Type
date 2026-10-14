@@ -1,17 +1,25 @@
 /*
 ** EPITECH PROJECT, 2026
-** R-Type
+** R_Type
 ** File description:
-** Scene interface
+** IScene
 */
 
 #pragma once
 
-class IScene {
-public:
-    virtual ~IScene() = default;
-    virtual void onLoad() = 0;
-    virtual void onUnload() = 0;
-    virtual void update(float deltaTime) = 0;
-    virtual void render() = 0;
-};
+#include <SDL3/SDL.h>
+
+namespace client
+{
+    class IScene {
+
+        public:
+            virtual ~IScene() = default;
+
+            virtual void onLoad() = 0;
+            virtual void onUnload() = 0;
+            virtual void handleEvent(const SDL_Event &event) = 0;
+            virtual void update(float deltaTime) = 0;
+            virtual void render(SDL_Renderer *renderer) = 0;
+    };
+}
