@@ -2,42 +2,30 @@
 ** EPITECH PROJECT, 2026
 ** R_Type
 ** File description:
-** Menu
+** MainMenu
 */
 
 #pragma once
 
-#include <SDL3/SDL.h>
-#include <string>
-#include <vector>
+#include "ButtonList.hpp"
+#include "IScene.hpp"
+#include "SceneManager.hpp"
 
-namespace client {
-
-    enum class MainMenuAction {
-        None,
-        Play,
-        Settings,
-        Quit
-    };
-
-    class MainMenu {
+namespace client
+{
+    class MainMenu : public IScene {
         public:
-            MainMenu(float screenWidth, float screenheight);
+            MainMenu(SceneManager &scenes, float screenWidth, float screenHeight);
 
-            MainMenuAction handleEvent(const SDL_Event &event);
-            void render(SDL_Renderer *renderer) const;
+            void onLoad() override;
+            void onUnload() override;
+            void handleEvent(const SDL_Event &event) override;
+            void update(float deltaTime) override;
+            void render(SDL_Renderer *renderer) override;
 
         private:
-            struct Button {
-                std::string label;
-                MainMenuAction action;
-                SDL_FRect rect;
-            };
-            void drawCenteredText(SDL_Renderer *renderer, const std::string &text,
-                    const SDL_FRect &area, float scale) const;
-
-            std::vector<Button> _buttons;
-            std::size_t _selected = 0;
+            SceneManager &_scenes;
+            ButtonList _buttons;
             float _screenWidth;
     };
 }

@@ -6,6 +6,12 @@
 */
 
 #include "../../include/Game.hpp"
+#include "../../include/GameScene.hpp"
+#include "../../include/JoinRoom.hpp"
+#include "../../include/Lobby.hpp"
+#include "../../include/MainMenu.hpp"
+#include "../../include/MenuSettings.hpp"
+#include "../../include/PlayMenu.hpp"
 #include <stdexcept>
 
 namespace client
@@ -23,6 +29,15 @@ namespace client
         if (!_renderer)
             throw std::runtime_error(SDL_GetError());
 
+        _context.window = _window.get();
+
+        _scenes.addScene("menu", std::make_unique<MainMenu>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("settings", std::make_unique<MenuSettings>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("game", std::make_unique<GameScene>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("playmenu", std::make_unique<PlayMenu>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("joinroom", std::make_unique<JoinRoom>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("lobby", std::make_unique<Lobby>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.switchScene("menu");
     }
 
     Game::~Game()
@@ -36,10 +51,9 @@ namespace client
     {
         uint64_t last = SDL_GetTicksNS();
 
-        while (_running)
-        {
+        while (_running && !_scenes.shouldQuit()) {
             uint64_t now = SDL_GetTicksNS();
-            float dt = static_cast<float> (now - last) / 1e9f;
+            float dt = static_cast<float>(now - last) / 1e9f;
             last = now;
 
             handleEvents();
@@ -53,55 +67,24 @@ namespace client
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT)
+            if (event.type == SDL_EVENT_QUIT) {
                 _running = false;
-
-            if (_state == State::Menu) {
-                MainMenuAction action = _menu.handleEvent(event);
-                if (action == MainMenuAction::Play)
-                    _state = State::Playing;
-                else if (action == MainMenuAction::Settings)
-                    _state = State::Settings;
-                else if (action == MainMenuAction::Quit)
-                    _running = false;
+                continue;
             }
-            if (_state == State::Settings) {
-                MenuSettingsAction action = _menu_settings.handleEvent(event);
-                if (action == MenuSettingsAction::Volume)
-                    printf("Volume\n");
-                else if (action == MenuSettingsAction::Fullscreen)
-                    printf("Fullscreen\n");
-                else if (action == MenuSettingsAction::BigWindowed)
-                    printf("Fullscreen\n");
-                else if (action == MenuSettingsAction::SmallWindowed)
-                    printf("SmallWindowed\n");
-                else if (action == MenuSettingsAction::Return)
-                    _state = State::Menu;
-            }
+            _scenes.handleEvent(event);
         }
     }
 
     void Game::update(float dt)
     {
-        if (_state != State::Playing)
-            return;
-
-        _player.handleInput(SDL_GetKeyboardState(nullptr));
-        _player.update(dt, WINDOW_WIDTH, WINDOW_HEIGHT);
+        _scenes.update(dt);
     }
 
     void Game::render()
     {
         SDL_SetRenderDrawColor(_renderer.get(), 10, 10, 30, 255);
         SDL_RenderClear(_renderer.get());
-
-        if (_state == State::Menu)
-            _menu.render(_renderer.get());
-        else if (_state == State::Settings)
-            _menu_settings.render(_renderer.get());
-        else
-            _player.render(_renderer.get());
-
+        _scenes.render(_renderer.get());
         SDL_RenderPresent(_renderer.get());
     }
 }

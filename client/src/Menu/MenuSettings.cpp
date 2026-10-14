@@ -6,92 +6,52 @@
 */
 
 #include "../../include/MenuSettings.hpp"
+#include <iostream>
 
-namespace client {
-
-    MenuSettings::MenuSettings(float screenWidth, float screenHeight) : _screenWidth(screenWidth)
+namespace client
+{
+    MenuSettings::MenuSettings(SceneManager &scenes, float screenWidth, float screenHeight)
+        : _scenes(scenes),
+          _buttons(screenWidth / 2.0f, 240.0f, 600.0f, 60.0f, 20.0f),
+          _screenWidth(screenWidth)
     {
-        const float width = 300.0f;
-        const float height = 60.0f;
-        const float spacing = 20.0f;
-        const float x = (screenWidth - width) / 2.0f;
-        float y = screenHeight / 2.0f;
-
-        _buttons.push_back({"VOLUME", MenuSettingsAction::Volume, {x, y, width, height}});
-        y += height + spacing;
-        _buttons.push_back({"FULLSCREEN", MenuSettingsAction::Fullscreen, {x, y, width, height}});
-        y += height + spacing;
-        _buttons.push_back({"WINDOWED ENTIER SCREEN", MenuSettingsAction::BigWindowed, {x, y, width, height}});
-        y += height + spacing;
-        _buttons.push_back({"WINDOWED SMALL SCREEN", MenuSettingsAction::SmallWindowed, {x, y, width, height}});
-        y += height + spacing;
-        _buttons.push_back({"RETURN", MenuSettingsAction::Return, {x, y, width, height}});
+        (void)screenHeight;
+        _buttons.addButton("VOLUME", []() { std::cout << "Volume" << std::endl; });
+        _buttons.addButton("FULLSCREEN", []() { std::cout << "Fullscreen" << std::endl; });
+        _buttons.addButton("BORDERLESS WINDOW", []() { std::cout << "BorderlessWindow" << std::endl; });
+        _buttons.addButton("WINDOWED SMALL SCREEN", []() { std::cout << "SmallWindowed" << std::endl; });
+        _buttons.addButton("RETURN", [this]() { _scenes.switchScene("menu"); });
     }
 
-    MenuSettingsAction MenuSettings::handleEvent(const SDL_Event& event)
+    void MenuSettings::onLoad()
     {
-        if (event.type == SDL_EVENT_KEY_DOWN) {
-            switch (event.type) {
-                case SDLK_UP:
-                    _selected = (_selected + _buttons.size() - 1) % _buttons.size();
-                    break;
-                case SDLK_DOWN:
-                    _selected = (_selected + 1) % _buttons.size();
-                    break;
-                case SDLK_RETURN:
-                    return _buttons[_selected].action;
-                default:
-                    break;
-            }
-        }
-
-        if (event.type == SDL_EVENT_MOUSE_MOTION) {
-            SDL_FPoint mouse = {event.motion.x, event.motion.y};
-            for (std::size_t i = 0; i < _buttons.size(); i++)
-                if (SDL_PointInRectFloat(&mouse, &_buttons[i].rect))
-                    _selected = i;
-        }
-
-        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_LEFT) {
-            SDL_FPoint mouse = {event.button.x, event.button.y};
-            for (const auto &button : _buttons)
-                if (SDL_PointInRectFloat(&mouse, &button.rect))
-                    return button.action;
-        }
-
-        return MenuSettingsAction::None;
+        _buttons.reset();
     }
 
-    void MenuSettings::render(SDL_Renderer* renderer) const
+    void MenuSettings::onUnload()
     {
-        for (std::size_t i = 0; i < _buttons.size(); i++) {
-            const Button &button = _buttons[i];
-            bool selected = (i == _selected);
-
-            if (selected)
-                SDL_SetRenderDrawColor(renderer, 0, 200, 255, 255);
-            else
-                SDL_SetRenderDrawColor(renderer, 40, 40, 70, 255);
-            SDL_RenderFillRect(renderer, &button.rect);
-
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderRect(renderer, &button.rect);
-
-            if (selected)
-                SDL_SetRenderDrawColor(renderer, 10, 10, 30, 255);
-            drawCenteredText(renderer, button.label, button.rect, 3.0f);
-        }
     }
 
-    void MenuSettings::drawCenteredText(SDL_Renderer *renderer, const std::string &text,
-        const SDL_FRect &area, float scale) const
+    void MenuSettings::handleEvent(const SDL_Event &event)
     {
-        const float charSize = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * scale;
-        float x = area.x + (area.w - text.size() * charSize) / 2.0f;
-        float y = area.y + (area.h - charSize) / 2.0f;
+        if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
+            _scenes.switchScene("menu");
+            return;
+        }
+        _buttons.handleEvent(event);
+    }
 
-        SDL_SetRenderScale(renderer, scale, scale);
-        SDL_RenderDebugText(renderer, x / scale, y / scale, text.c_str());
-        SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+    void MenuSettings::update(float deltaTime)
+    {
+        (void)deltaTime;
+    }
+
+    void MenuSettings::render(SDL_Renderer *renderer)
+    {
+        SDL_FRect titleArea = {0.0f, 100.0f, _screenWidth, 80.0f};
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        drawCenteredText(renderer, "SETTINGS", titleArea, 5.0f);
+        _buttons.render(renderer);
     }
 }

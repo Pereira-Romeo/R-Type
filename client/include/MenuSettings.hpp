@@ -5,39 +5,28 @@
 ** MenuSettings
 */
 
-#include <SDL3/SDL.h>
-#include <string>
-#include <vector>
+#pragma once
 
-namespace client {
+#include "ButtonList.hpp"
+#include "IScene.hpp"
+#include "SceneManager.hpp"
 
-    enum class MenuSettingsAction {
-        None,
-        Volume,
-        Fullscreen,
-        BigWindowed,
-        SmallWindowed,
-        Return
-    };
+namespace client
+{
+    class MenuSettings : public IScene {
 
-    class MenuSettings {
         public:
-            MenuSettings(float screenWidth, float screenHeight);
+            MenuSettings(SceneManager &scenes, float screenWidth, float screenHeight);
 
-            MenuSettingsAction handleEvent(const SDL_Event &event);
-            void render(SDL_Renderer *renderer) const;
+            void onLoad() override;
+            void onUnload() override;
+            void handleEvent(const SDL_Event &event) override;
+            void update(float deltaTime) override;
+            void render(SDL_Renderer *renderer) override;
 
         private:
-            struct Button {
-                std::string label;
-                MenuSettingsAction action;
-                SDL_FRect rect;
-            };
-            void drawCenteredText(SDL_Renderer *renderer, const std::string &text,
-                    const SDL_FRect &area, float scale) const;
-
-            std::vector<Button> _buttons;
-            std::size_t _selected = 0;
+            SceneManager &_scenes;
+            ButtonList _buttons;
             float _screenWidth;
     };
 }
