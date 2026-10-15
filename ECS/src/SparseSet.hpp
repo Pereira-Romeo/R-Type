@@ -187,7 +187,7 @@ namespace ECS
          * @param index Entity index
          * @return Pointer to resource
          */
-        T *at(size_t index)
+        T *get(size_t index)
         {
             if (index >= _capacity || _sparse_list[index] == null_index)
                 return nullptr;
