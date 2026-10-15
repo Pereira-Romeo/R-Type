@@ -8,6 +8,11 @@ namespace ECS
 {
 
     /**
+     * Null element, not reachable
+     */
+    constexpr std::size_t null_index = std::numeric_limits<size_t>::max();
+
+    /**
      * Storage class to be used in the ECS. Its main advantages are :
      *  - that it owns all of the components, thus avoiding ownership troubles. Getting components is done through using an entity id
      *  - it allows for O(1) lookups, adding and deletion
@@ -17,11 +22,6 @@ namespace ECS
     class SparseSet : public ISparseSet
     {
     private:
-        /**
-         * Null element, not reachable
-         */
-        static constexpr size_t null_index = std::numeric_limits<size_t>::max();
-
         /**
          *List of indexes. indexes are stocked at the right spot for entities
          */
@@ -109,7 +109,7 @@ namespace ECS
             _sparse_list.clear();
             _dense_indexes.clear();
             std::fill()
-            _dense_list.clear();
+                _dense_list.clear();
         }
 
         /**
