@@ -133,7 +133,7 @@ namespace ECS
          * @param item Item to be added at index
          */
         template <typename V>
-        void set(size_t index, V &&item)
+        T &set(size_t index, V &&item)
         {
             if (index >= _capacity)
                 return;
@@ -148,6 +148,7 @@ namespace ECS
                 add_dense_index(index);
                 _dense_list.push_back(std::forward<V>(item));
             }
+            return _dense_list[dense_index];
         }
 
         /**
