@@ -4,11 +4,18 @@
 #include <vector>
 
 #ifndef ECS_ASSERT
-	#define ECS_ASSERT(condition, msg) \
-		if (!(condition)) { \
-			std::cerr << "ecs error: " << msg << std::endl; \
-			::abort(); \
-		}
+	#ifndef NDEBUG
+		#define ECS_ASSERT(condition, msg) \
+			if (!(condition)) { \
+				std::cerr << "ecs error: " << msg << std::endl; \
+				::abort(); \
+			}
+	#else
+		#define ECS_ASSERT(condition, msg) \
+			if (!(condition)) { \
+				std::cerr << "ecs error: " << msg << std::endl \
+			}
+	#endif
 #endif
 #ifndef ECS_INFO
 	#ifdef ECS_INFO_ENABLED
