@@ -5,9 +5,15 @@
 
 namespace ECS
 {
+    template <typename... Components>
+    class View;
+
     class Registry
     {
     private:
+        template <typename...>
+        friend class View;
+
         /**
          * List of available ids for entities (in order to avoid allocating more)
          */
@@ -240,8 +246,8 @@ namespace ECS
             return (has<Ts>(entity) || ...);
         }
 
-        // template <typename... Components>
-        // SimpleView<Components...> view();
+        template <typename... Components>
+        View<Components...> view();
 
         bool is_alive(size_t entity) const
         {
@@ -253,5 +259,15 @@ namespace ECS
             return _component_pools.size();
         }
     };
+}
 
+#include "View.hpp"
+
+namespace ECS
+{
+    template <typename... Components>
+    View<Components...> Registry::view()
+    {
+        return View<Components...>(this);
+    }
 }
