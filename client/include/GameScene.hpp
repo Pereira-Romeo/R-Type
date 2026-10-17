@@ -10,6 +10,7 @@
 #include "IScene.hpp"
 #include "Player.hpp"
 #include "SceneManager.hpp"
+#include "EnemyManager.hpp"
 
 namespace client
 {
@@ -28,5 +29,6 @@ namespace client
             float _screenWidth;
             float _screenHeight;
             Player _player;
+            EnemyManager _enemies;
     };
 }

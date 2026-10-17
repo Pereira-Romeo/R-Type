@@ -18,7 +18,7 @@ namespace client
 {
     Game::Game()
     {
-        if (!SDL_Init(SDL_INIT_VIDEO))
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
             throw std::runtime_error(SDL_GetError());
 
         _window.reset(SDL_CreateWindow("R-Type", WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE));
