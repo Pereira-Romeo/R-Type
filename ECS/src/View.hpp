@@ -12,7 +12,7 @@ namespace ECS
         Registry *_ecs;
         std::array<ISparseSet *, sizeof...(Components)> _pools;
         std::vector<ISparseSet *> _excluded_pools;
-        std::vector<size_t> _driver;
+        const std::vector<size_t> *_driver;
 
         bool all_contain(std::size_t index)
         {
@@ -36,16 +36,17 @@ namespace ECS
             if (std::any_of(_pools.begin(), _pools.end(), [](ISparseSet *pool)
                             { return !pool; }))
             {
-                ECS_INFO("view has invalid components.")
-                _driver = empty;
+                ECS_INFO("view has invalid components");
+                _driver = &empty;
+                return;
             }
 
-            auto smallest = std::min_element(_pools.begin(), _pools.end(), [](ISparseSet *a, ISparseSet *b)
+            ISparseSet *smallest = *std::min_element(_pools.begin(), _pools.end(), [](ISparseSet *a, ISparseSet *b)
                                              { return a->size() < b->size(); });
 
-            ECS_ASSERT(smallest != _pools.end(), "view is empty");
+            ECS_ASSERT(smallest != *_pools.end(), "view is empty");
 
-            _driver = (*smallest)->get_index_list();
+            _driver = &smallest->get_index_list();
         }
 
         template <typename... ExcludedComponents>
@@ -80,28 +81,28 @@ namespace ECS
             View *_view;
             size_t _index;
 
-            void next_valid()
+            void next()
             {
-                while (_index < _view->_driver.size() && !(_view->all_contain(_view->_driver[_index]) && _view->not_excluded(_view->_driver[_index])))
+                while (_index < _view->_driver->size() && !(_view->all_contain((*_view->_driver)[_index]) && _view->not_excluded((*_view->_driver)[_index])))
                     _index++;
             }
 
         public:
             Iterator(View *view, size_t index) : _view(view), _index(index)
             {
-                next_valid();
+                next();
             }
 
             Iterator &operator++()
             {
                 _index++;
-                next_valid();
+                next();
                 return *this;
             }
 
             size_t operator*() const
             {
-                return _view->_driver[_index];
+                return (*_view->_driver)[_index];
             }
 
             bool operator!=(const Iterator &rhs) const
@@ -117,7 +118,7 @@ namespace ECS
 
         Iterator end()
         {
-            return Iterator(this, _driver.size());
+            return Iterator(this, _driver->size());
         }
     };
 

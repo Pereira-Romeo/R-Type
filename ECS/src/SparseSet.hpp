@@ -209,7 +209,7 @@ namespace ECS
          * Get a copy of indexes of all entities that have components registered into the SparseSet.
          * @return Vector of entity ids
          */
-        std::vector<size_t> get_index_list() const override
+        const std::vector<size_t> &get_index_list() const override
         {
             return _dense_indexes;
         }
