@@ -40,7 +40,7 @@ namespace ECS
         /**
          * Max size of the sparse set
          */
-        size_t _capacity;
+        size_t _capacity = 0;
 
         /**
          * Gets the dense index attached to the corresponding entity index.
@@ -90,12 +90,15 @@ namespace ECS
          */
         inline void set_sparse_index(size_t index, size_t item_index)
         {
+            if (index >= _sparse_list.size()) {
+                _sparse_list.resize(index + 1, null_index);
+                _capacity = index + 1;
+            }
             _sparse_list[index] = item_index;
         }
 
     public:
-        SparseSet(size_t size) : _sparse_list(size, null_index),
-                                 _capacity(size) {}
+        SparseSet() = default;
         ~SparseSet()
         {
             clear();
@@ -108,8 +111,8 @@ namespace ECS
         {
             _sparse_list.clear();
             _dense_indexes.clear();
-            std::fill()
-                _dense_list.clear();
+            _dense_list.clear();
+            _capacity = 0;
         }
 
         /**
@@ -135,8 +138,6 @@ namespace ECS
         template <typename V>
         T &set(size_t index, V &&item)
         {
-            if (index >= _capacity)
-                return;
             size_t dense_index = get_dense_index(index);
             if (dense_index != null_index)
             {
