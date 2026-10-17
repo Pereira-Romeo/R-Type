@@ -10,6 +10,8 @@
 #include <SDL3/SDL.h>
 #include "FrameBufferHandler.hpp"
 
+#include "BulletManager.hpp"
+
 namespace client
 {
     class Player {
@@ -20,8 +22,10 @@ namespace client
             void update(float dt, float screenWidth, float screenHeight);
             void render(SDL_Renderer *renderer) const;
             void ManageInput(void);
+            void shoot(float x, float y);
 
             SDL_FRect getHitbox() const;
+            BulletManager &getBullet() {return _BulletManager;};
 
         private:
             float _x;
@@ -34,5 +38,10 @@ namespace client
             std::string _input;
 
             FrameBufferHandler* _handler = new FrameBufferHandler();
+            SDL_Gamepad *_gamepad = nullptr;
+
+            BulletManager _BulletManager;
+            float _shootCooldown = 0.0f;
+            float _shootInterval = 0.2f;
     };
 }

@@ -11,7 +11,8 @@ namespace client
 {
     GameScene::GameScene(SceneManager &scenes, float screenWidth, float screenHeight)
         : _scenes(scenes), _screenWidth(screenWidth), _screenHeight(screenHeight),
-          _player(100.0f, screenHeight / 2.0f)
+          _player(100.0f, screenHeight / 2.0f),
+          _enemies()
     {
     }
 
@@ -33,10 +34,17 @@ namespace client
     {
         _player.handleInput(SDL_GetKeyboardState(nullptr));
         _player.update(deltaTime, _screenWidth, _screenHeight);
+        _enemies.update(deltaTime, _screenWidth, _screenHeight, _player.getBullet());
     }
 
     void GameScene::render(SDL_Renderer *renderer)
     {
+        SDL_SetRenderDrawColor(renderer, 10, 10, 30, 255);
+        SDL_RenderClear(renderer);
+
         _player.render(renderer);
+        _enemies.render(renderer);
+
+        SDL_RenderPresent(renderer);
     }
 }
