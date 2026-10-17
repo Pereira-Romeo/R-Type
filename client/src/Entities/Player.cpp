@@ -36,13 +36,13 @@ namespace client
 
     void Player::handleInput(const bool *keys)
     {
-        if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W])
+        if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] || (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP)))
             _handler->Delay("UP");
-        if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S])
+        if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] || (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN)))
             _handler->Delay("DOWN");
-        if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A])
+        if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] ||  (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT)))
             _handler->Delay("LEFT");
-        if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D])
+        if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] || (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT)))
             _handler->Delay("RIGHT");
         
         // Shoot
@@ -58,34 +58,20 @@ namespace client
 
     void Player::ManageInput(void)
     {
-        _dirX = 0.0f;
-        _dirY = 0.0f;
-
-        //up
-        if (_input == "UP" ||
-            (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP))) {
+        if (_input == "UP")
             _dirY -= 1.0f;
-        }
 
-        //down
-        if (_input == "DOWN" ||
-            (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN))) {
+        if (_input == "DOWN")
             _dirY += 1.0f;
-        }
 
-        //gauche
-        if (_input == "LEFT" ||
-            (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT))) {
+        if (_input == "LEFT")
             _dirX -= 1.0f;
-        }
 
-        // droite
-        if (_input == "RIGHT" ||
-            (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT))) {
+        if (_input == "RIGHT")
             _dirX += 1.0f;
-        }
 
         // analogi gauche
+        /*
         if (_gamepad) {
             float stickX = (float)SDL_GetGamepadAxis(_gamepad, SDL_GAMEPAD_AXIS_LEFTX) / 32767.0f;
             float stickY = (float)SDL_GetGamepadAxis(_gamepad, SDL_GAMEPAD_AXIS_LEFTY) / 32767.0f;
@@ -96,6 +82,7 @@ namespace client
             if (SDL_fabs(stickY) > 0.2f)
                 _dirY += stickY;
         }
+        */
 
         // normalisé moove diag
         float length = std::sqrt(_dirX * _dirX + _dirY * _dirY);
@@ -107,8 +94,23 @@ namespace client
 
     void Player::update(float dt, float screenWidth, float screenHeight)
     {
+        _dirX = 0.0f;
+        _dirY = 0.0f;
+    
         if (_shootCooldown > 0.0f)
             _shootCooldown -= dt;
+
+        _handler->updateFrame();
+        std::vector<std::string> inputList = _handler->Read();
+
+        if (inputList.empty()) {
+            _input = std::string();
+        } else {
+            for (auto input : inputList) {
+                _input = input;
+                ManageInput();
+            }
+        }
 
         _x += _dirX * _speed * dt;
         _y += _dirY * _speed * dt;
@@ -116,11 +118,6 @@ namespace client
         _x = std::clamp(_x, 0.0f, screenWidth - _width);
         _y = std::clamp(_y, 0.0f, screenHeight - _height);
         _BulletManager.update(dt, screenWidth);
-
-        _handler->updateFrame();
-        _input = std::string();
-        _input = _handler->Read();
-        ManageInput();
     }
 
     void Player::render(SDL_Renderer *renderer) const
