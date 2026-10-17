@@ -21,13 +21,16 @@ namespace client
         if (!SDL_Init(SDL_INIT_VIDEO))
             throw std::runtime_error(SDL_GetError());
 
-        _window.reset(SDL_CreateWindow("R-Type", WINDOW_WIDTH, WINDOW_HEIGHT, 0));
+        _window.reset(SDL_CreateWindow("R-Type", WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE));
         if (!_window)
             throw std::runtime_error(SDL_GetError());
 
         _renderer.reset(SDL_CreateRenderer(_window.get(), nullptr));
         if (!_renderer)
             throw std::runtime_error(SDL_GetError());
+
+        SDL_SetRenderLogicalPresentation(_renderer.get(), WINDOW_WIDTH, WINDOW_HEIGHT,
+            SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
         _context.window = _window.get();
 
@@ -71,6 +74,7 @@ namespace client
                 _running = false;
                 continue;
             }
+            SDL_ConvertEventToRenderCoordinates(_renderer.get(), &event);
             _scenes.handleEvent(event);
         }
     }
