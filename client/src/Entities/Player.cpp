@@ -53,13 +53,6 @@ namespace client
 
     void Player::update(float dt, float screenWidth, float screenHeight)
     {
-
-        if (_handler->currFrame % 60 == 0)
-        {
-            _handler->Rollback({_handler->currFrame + 1, {"RIGHT"}});
-            _handler->Display();
-        }
-
         _x += _dirX * _speed * dt;
         _y += _dirY * _speed * dt;
 
