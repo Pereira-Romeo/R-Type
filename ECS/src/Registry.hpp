@@ -168,7 +168,7 @@ namespace ECS
             ECS_ASSERT_VALID_ENTITY(entity);
             ECS_ASSERT_ALIVE_ENTITY(entity);
 
-            size_t component_index = get_or_register_component_index<T>();
+            get_or_register_component_index<T>();
             SparseSet<T> &pool = get_component_pool<T>();
 
             return pool.set(entity, component);
