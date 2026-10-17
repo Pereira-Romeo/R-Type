@@ -53,11 +53,12 @@ namespace client
 
     void Player::update(float dt, float screenWidth, float screenHeight)
     {
-        // std::cout << "[NEW FRAME]: " << std::endl;
-        //
-        // std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        _handler->Display();
+        if (_handler->currFrame % 60 == 0)
+        {
+            _handler->Rollback({_handler->currFrame + 1, {"RIGHT"}});
+            _handler->Display();
+        }
 
         _x += _dirX * _speed * dt;
         _y += _dirY * _speed * dt;
@@ -66,9 +67,9 @@ namespace client
         _y = std::clamp(_y, 0.0f, screenHeight - _height);
 
         _handler->updateFrame();
+        _input = std::string();
         _input = _handler->Read();
-        if (_input != "no")
-            ManageInput();
+        ManageInput();
     }
 
     void Player::render(SDL_Renderer *renderer) const
