@@ -30,5 +30,6 @@ namespace client
             ButtonList _buttons;
             bool is_fullscreen;
             float _screenWidth;
+            float _screenHeight;
     };
 }
