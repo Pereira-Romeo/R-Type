@@ -51,7 +51,7 @@ void proto::writeHeader(std::uint8_t* out, const Header& header)
     std::memcpy(out + 3, &seq, 2);
 }
 
-void append16(std::vector<std::uint8_t>& payload, std::uint16_t value)
+void proto::append16(std::vector<std::uint8_t>& payload, std::uint16_t value)
 {
     std::uint16_t net = htons(value);
     std::uint8_t bytes[2];

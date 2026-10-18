@@ -6,7 +6,10 @@
 */
 
 #pragma once
+#include <asio.hpp>
 #include <array>
+#include <chrono>
+#include <cstdint>
 #include "../../common/include/Protocol.hpp"
 
 struct Client {
