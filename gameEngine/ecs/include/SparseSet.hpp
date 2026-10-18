@@ -142,14 +142,15 @@ namespace ecs
             if (dense_index != null_index)
             {
                 _dense_list[dense_index] = std::forward<V>(item);
+                return _dense_list[dense_index];
             }
             else
             {
                 set_sparse_index(index, _dense_list.size());
                 add_dense_index(index);
                 _dense_list.push_back(std::forward<V>(item));
+                return _dense_list.back();
             }
-            return _dense_list[dense_index];
         }
 
         /**
