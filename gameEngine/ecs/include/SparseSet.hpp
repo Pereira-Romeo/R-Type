@@ -4,7 +4,7 @@
 #include <limits>
 #include "ISparseSet.hpp"
 
-namespace ECS
+namespace ecs
 {
 
     /**
@@ -241,10 +241,10 @@ namespace ECS
         }
     };
 
-};
+} // namespace ecs
 
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const ECS::SparseSet<T> &set)
+std::ostream &operator<<(std::ostream &os, const ecs::SparseSet<T> &set)
 {
     set.print(os);
     return os;

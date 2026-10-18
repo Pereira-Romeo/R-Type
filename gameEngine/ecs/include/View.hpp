@@ -3,7 +3,7 @@
 #include <array>
 #include "Registry.hpp"
 
-namespace ECS
+namespace ecs
 {
     template <typename... Components>
     class View
@@ -122,4 +122,4 @@ namespace ECS
         }
     };
 
-}
+} // namespace ecs

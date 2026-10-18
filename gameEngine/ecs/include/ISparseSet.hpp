@@ -3,7 +3,7 @@
 #include <cstddef>
 #include "Debug.hpp"
 
-namespace ECS
+namespace ecs
 {
 
 	/**
@@ -21,4 +21,4 @@ namespace ECS
 		virtual const std::vector<size_t> &get_index_list() const = 0;
     };
 
-} // namespace ECS
+} // namespace ecs

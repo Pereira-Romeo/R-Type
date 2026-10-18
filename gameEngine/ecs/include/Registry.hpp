@@ -3,7 +3,7 @@
 #include <memory>
 #include "SparseSet.hpp"
 
-namespace ECS
+namespace ecs
 {
     template <typename... Components>
     class View;
@@ -259,15 +259,16 @@ namespace ECS
             return _component_pools.size();
         }
     };
-}
+
+} // namespace ecs
 
 #include "View.hpp"
 
-namespace ECS
+namespace ecs
 {
     template <typename... Components>
     View<Components...> Registry::view()
     {
         return View<Components...>(this);
     }
-}
+} // namespace ecs
