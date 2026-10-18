@@ -11,6 +11,7 @@
 
 #include "Registry.hpp"
 #include "ScheduleManager.hpp"
+#include "Background/Starfield.hpp"
 #include "GameLogic/Components.hpp"
 #include "GameLogic/Factories.hpp"
 #include "GameLogic/Systems.hpp"
@@ -42,6 +43,7 @@ namespace client
             ScheduleManager _schedule;
             SDL_Renderer *_renderer = nullptr;
             ecs::Registry _registry;
+            StarField _starfield;
 
             Network *_net;
             std::array<std::optional<size_t>, proto::MAX_PLAYERS> _remotes;

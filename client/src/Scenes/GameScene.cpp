@@ -10,7 +10,8 @@
 namespace client
 {
     GameScene::GameScene(SceneManager &scenes, Network *net, float screenWidth, float screenHeight)
-        : _scenes(scenes), _screenWidth(screenWidth), _screenHeight(screenHeight), _net(net)
+        : _scenes(scenes), _screenWidth(screenWidth), _screenHeight(screenHeight), _net(net),
+        _starfield(screenWidth, screenHeight, 250)
     {
     }
 
@@ -102,6 +103,7 @@ namespace client
 
     void GameScene::update(float deltaTime)
     {
+        _starfield.update(deltaTime);
         for (const NetEvent &e : _net->poll()) {
             switch (e.kind) {
             case NetEvent::Kind::PlayerJoined:
@@ -156,10 +158,8 @@ namespace client
     void GameScene::render(SDL_Renderer *renderer)
     {
         _renderer = renderer;
-        SDL_SetRenderDrawColor(_renderer, 10, 10, 30, 255);
-        SDL_RenderClear(_renderer);
+        _starfield.render(_renderer);
         _schedule.run(_registry, 0.0f, Bucket::Rendu, Bucket::Rendu);
 
-        SDL_RenderPresent(_renderer);
     }
 }
