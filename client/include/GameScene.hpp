@@ -8,9 +8,13 @@
 #pragma once
 
 #include "IScene.hpp"
-#include "Player.hpp"
 #include "SceneManager.hpp"
-#include "EnemyManager.hpp"
+
+#include "Registry.hpp"
+#include "ScheduleManager.hpp"
+#include "GameLogic/Components.hpp"
+#include "GameLogic/Factories.hpp"
+#include "GameLogic/Systems.hpp"
 
 namespace client
 {
@@ -28,7 +32,10 @@ namespace client
             SceneManager &_scenes;
             float _screenWidth;
             float _screenHeight;
-            Player _player;
-            EnemyManager _enemies;
+            float _spawnTimer = 0.f;
+            SDL_Gamepad *_gamepad = nullptr;
+            ScheduleManager _schedule;
+            SDL_Renderer *_renderer = nullptr;
+            ecs::Registry _registry;
     };
 }
