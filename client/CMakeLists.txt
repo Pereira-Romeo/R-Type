@@ -1,7 +1,17 @@
-find_package(SDL3 CONFIG REQUIRED)
+cmake_minimum_required(VERSION 3.20)
+project(r-type_client LANGUAGES CXX)
 
-add_executable(r-type_client)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(SDL3 REQUIRED CONFIG)
+
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+
+add_executable(r-type_client ${SOURCES}
+        include/MainMenu.hpp)
+target_include_directories(r-type_client PRIVATE src)
+target_link_libraries(r-type_client PRIVATE SDL3::SDL3)
 file(GLOB_RECURSE CLIENT_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
