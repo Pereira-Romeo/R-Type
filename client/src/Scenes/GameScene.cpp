@@ -19,10 +19,13 @@ namespace client
     {
         _remotes.fill(std::nullopt);
 
+        _connected = false;
         if (!_net->connect("127.0.0.1", 4242)) {
             _scenes.switchScene("menu");
             return;
         }
+        _connected = true;
+
         const WelcomeData &w = _net->getWelcome();
 
         int num_gamepads = 0;
@@ -93,6 +96,7 @@ namespace client
         }
         _renderer = nullptr;
         _spawnTimer = 0.f;
+        _connected = false;
     }
 
     void GameScene::handleEvent(const SDL_Event &event)
@@ -103,6 +107,9 @@ namespace client
 
     void GameScene::update(float deltaTime)
     {
+        if (!_connected)
+            return;
+
         _starfield.update(deltaTime);
         for (const NetEvent &e : _net->poll()) {
             switch (e.kind) {
@@ -157,9 +164,11 @@ namespace client
 
     void GameScene::render(SDL_Renderer *renderer)
     {
+        if (!_connected)
+            return;
+
         _renderer = renderer;
         _starfield.render(_renderer);
         _schedule.run(_registry, 0.0f, Bucket::Rendu, Bucket::Rendu);
-
     }
 }

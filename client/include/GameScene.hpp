@@ -48,5 +48,6 @@ namespace client
             Network *_net;
             std::array<std::optional<size_t>, proto::MAX_PLAYERS> _remotes;
             std::unordered_map<std::uint16_t, size_t> _enemies;
+            bool _connected = false;
     };
 }
