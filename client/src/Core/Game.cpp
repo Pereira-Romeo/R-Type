@@ -36,7 +36,7 @@ namespace client
 
         _scenes.addScene("menu", std::make_unique<MainMenu>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT));
         _scenes.addScene("settings", std::make_unique<MenuSettings>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT, _window.get()));
-        _scenes.addScene("game", std::make_unique<GameScene>(_scenes, WINDOW_WIDTH, WINDOW_HEIGHT));
+        _scenes.addScene("game", std::make_unique<GameScene>(_scenes, &_network, WINDOW_WIDTH, WINDOW_HEIGHT));
         _scenes.addScene("playmenu", std::make_unique<PlayMenu>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
         _scenes.addScene("joinroom", std::make_unique<JoinRoom>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
         _scenes.addScene("lobby", std::make_unique<Lobby>(_scenes, _context, WINDOW_WIDTH, WINDOW_HEIGHT));
