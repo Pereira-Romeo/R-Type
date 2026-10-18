@@ -47,8 +47,7 @@ namespace client
         
         // Shoot
         bool wantsToShoot = keys[SDL_SCANCODE_SPACE] ||
-            (_gamepad && SDL_GetGamepadButton(
-                _gamepad, SDL_GAMEPAD_BUTTON_SOUTH));
+            (_gamepad && SDL_GetGamepadButton(_gamepad, SDL_GAMEPAD_BUTTON_SOUTH));
 
         if (wantsToShoot && _shootCooldown <= 0.0f) {
             _BulletManager.shoot(_x + _width, _y + _height / 2.0f);

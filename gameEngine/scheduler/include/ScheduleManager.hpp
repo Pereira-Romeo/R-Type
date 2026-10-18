@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <entt/entt.hpp>
+#include "Registry.hpp"
 #include <array>
 #include <functional>
 #include <string>
@@ -24,22 +24,25 @@ enum class Bucket {
 
 class ScheduleManager {
     private:
-        using Systeme = std::function<void(entt::registry&, float)>;
+        using Systeme = std::function<void(ecs::Registry&, float)>;
         struct Entree { std::string nom; Systeme fn; };
         std::array<std::vector<Entree>, static_cast<int>(Bucket::COUNT)> m_buckets;
 
     public:
-        void OnStart(); //init jeu (remplie registry)
-        void OnStop(); //stop jeu (clean registtry)
         void add(Bucket bucket, std::string nom, Systeme fn) {
             m_buckets[static_cast<int>(bucket)].push_back({std::move(nom), std::move(fn)});
         }
 
-        void run(entt::registry& registry, float dt) {
-            for (int b = 0; b < static_cast<int>(Bucket::COUNT); ++b) {
+        void run(ecs::Registry& registry, float dt, Bucket from, Bucket to) {
+            for (int b = static_cast<int>(from);  b <= static_cast<int>(to); ++b) {
                 for (auto& entree : m_buckets[b])
                     entree.fn(registry, dt);
             }
+        }
+
+        void clear() {
+            for (auto &bucket : m_buckets)
+                bucket.clear();
         }
 
 };
