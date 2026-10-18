@@ -15,6 +15,7 @@
 #include <math.h>
 #include <set>
 #include <cstdlib>
+#include "Network.hpp"
 
 inline void movementSystem(ecs::Registry &reg, float dt)
 {
@@ -30,7 +31,7 @@ inline void inputSystem(ecs::Registry &reg, SDL_Gamepad *pad)
 {
     const bool *keys = SDL_GetKeyboardState(nullptr);
 
-    for (auto ent : reg.view<InputState, Controllable>())
+    for (auto ent : reg.view<InputState, LocalPlayer>())
     {
         auto &in = reg.get<InputState>(ent);
         in.up = (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] || (pad && SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP)));
@@ -107,7 +108,7 @@ inline void offscreenSystem(ecs::Registry &reg, float screenWidth)
     for (auto ent : reg.view<Position, Hitbox>().without<Controllable>()) {
         auto &pos = reg.get<Position>(ent);
         auto &box = reg.get<Hitbox>(ent);
-        if (pos.x >= screenWidth || pos.x <= -box.w)
+        if (pos.x >= screenWidth + 100.f || pos.x <= -box.w)
             toDestroy.push_back(ent);
     }
 
@@ -121,7 +122,7 @@ inline bool overlaps(const Position &pa, const Hitbox &ba, const Position &pb, c
              pa.y + ba.h <= pb.y || pa.y >= pb.y + bb.h);
 }
 
-inline void collisionSystem(ecs::Registry &reg, float dt)
+inline void collisionSystem(ecs::Registry &reg, float dt, Network *net)
 {
     auto toDestroy = std::set<size_t>{};
 
@@ -129,17 +130,16 @@ inline void collisionSystem(ecs::Registry &reg, float dt)
         auto &bpos = reg.get<Position>(bullet);
         auto &bbox = reg.get<Hitbox>(bullet);
 
-        for (auto enemy : reg.view<Position, Hitbox, Enemy>()) {
+        for (auto enemy : reg.view<Position, Hitbox, NetEnemy>()) {
             auto &epos = reg.get<Position>(enemy);
             auto &ebox = reg.get<Hitbox>(enemy);
 
             if (overlaps(bpos, bbox, epos, ebox)) {
                 toDestroy.insert(bullet);
-                toDestroy.insert(enemy);
+                net->sendEnemyKilled(reg.get<NetEnemy>(enemy).id);
             }
         }
     }
-
     for (auto ent : toDestroy)
         reg.delete_entity(ent);
 }
@@ -159,7 +159,7 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
 {
     auto toDestroy = std::set<size_t>{};
 
-    for (auto player : reg.view<Position, Hitbox, Controllable>()) {
+    for (auto player : reg.view<Position, Hitbox, LocalPlayer>()) {
         auto &ppos = reg.get<Position>(player);
         auto &pbox = reg.get<Hitbox>(player);
 
@@ -169,7 +169,7 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
 
             if (overlaps(ppos, pbox, epos, ebox)) {
                 toDestroy.insert(player);
-                toDestroy.insert(enemy);
+                //toDestroy.insert(enemy);
             }
         }
     }

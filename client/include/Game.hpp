@@ -13,6 +13,8 @@
 #include "ClientContext.hpp"
 #include "SceneManager.hpp"
 
+#include "Network.hpp"
+
 namespace client
 {
     class Game {
@@ -39,6 +41,7 @@ namespace client
             std::unique_ptr<SDL_Window, WindowDeleter> _window;
             std::unique_ptr<SDL_Renderer, RendererDeleter> _renderer;
             ClientContext _context;
+            Network _network;
             SceneManager _scenes;
             bool _running = true;
     };

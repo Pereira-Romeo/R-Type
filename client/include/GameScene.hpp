@@ -8,19 +8,24 @@
 #pragma once
 
 #include "IScene.hpp"
-#include "SceneManager.hpp"
 
 #include "Registry.hpp"
 #include "ScheduleManager.hpp"
 #include "GameLogic/Components.hpp"
 #include "GameLogic/Factories.hpp"
 #include "GameLogic/Systems.hpp"
+#include "SceneManager.hpp"
+
+#include <array>
+#include <optional>
+#include <unordered_map>
+#include "Network.hpp"
 
 namespace client
 {
     class GameScene : public IScene {
         public:
-            GameScene(SceneManager &scenes, float screenWidth, float screenHeight);
+            GameScene(SceneManager &scenes, Network *net, float screenWidth, float screenHeight);
 
             void onLoad() override;
             void onUnload() override;
@@ -37,5 +42,9 @@ namespace client
             ScheduleManager _schedule;
             SDL_Renderer *_renderer = nullptr;
             ecs::Registry _registry;
+
+            Network *_net;
+            std::array<std::optional<size_t>, proto::MAX_PLAYERS> _remotes;
+            std::unordered_map<std::uint16_t, size_t> _enemies;
     };
 }

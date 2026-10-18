@@ -19,3 +19,5 @@ struct InputState   { bool up=false, down=false, left=false, right=false, shoot=
 struct Shooter      { float cooldown = 0.f, interval = 0.2f; };
 struct Projectile   {}; // tag
 struct Enemy        {}; // tag
+struct NetEnemy { std::uint16_t id = 0; };
+struct LocalPlayer  {}; // tag
