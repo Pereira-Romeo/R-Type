@@ -1,7 +1,7 @@
 /*
 ** EPITECH PROJECT, 2026
 ** RType
-** file description:
+** File description:
 ** Main
 */
 

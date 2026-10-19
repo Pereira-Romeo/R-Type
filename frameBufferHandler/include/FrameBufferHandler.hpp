@@ -24,17 +24,18 @@ typedef struct frameData_s {
 class FrameBufferHandler {
     private:
         std::array<frameData_t, MAX_FRAMES> framesBuff = std::array<frameData_t, MAX_FRAMES>();
-        int read = 0; // tete decriture
-        int write = 0; // tete de lecture
-        int history = 0; // balise de la plus vieille donner save (proba deja consommer)
-        int currFrame = 0;
+        int _read = 0;
+        int _write = DELAY;
+        int _currFrame = 0;
+        int _history = 0;
 
     public:
         FrameBufferHandler();
         ~FrameBufferHandler();
         void Delay(std::string data);
         bool Rollback(frameData_t data);
-        void updateFrame() {currFrame++;};
-        std::string Read();
+        void updateFrame();
+        std::vector<std::string> Read();
+        void Write(int frame, std::string data);
         void Display();
 };
