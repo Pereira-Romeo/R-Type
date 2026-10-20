@@ -13,7 +13,7 @@
 struct Position     { float x = 0.f, y = 0.f; };
 struct Velocity     { float x = 0.f, y = 0.f; };
 struct Hitbox       { float w = 0.f, h = 0.f; };
-struct Renderable   { __uint8_t r, g, b, a = 255; };
+struct Renderable { std::uint8_t r = 255, g = 255, b = 255, a = 255; };
 struct Controllable { float speed = 300.f; };
 struct InputState   { bool up=false, down=false, left=false, right=false, shoot=false; };
 struct Shooter      { float cooldown = 0.f, interval = 0.2f; };
@@ -21,3 +21,9 @@ struct Projectile   {}; // tag
 struct Enemy        {}; // tag
 struct NetEnemy { std::uint16_t id = 0; };
 struct LocalPlayer  {}; // tag
+struct Sprite {
+    std::string texture;
+    int row = 0;
+    int col = 2;
+    float frameW = 0.f, frameH = 0.f;
+};

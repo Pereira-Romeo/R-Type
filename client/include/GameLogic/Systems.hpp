@@ -10,6 +10,7 @@
 #include "Registry.hpp"
 #include "Components.hpp"
 #include "Factories.hpp"
+#include "TextureManager.hpp"
 
 #include <SDL3/SDL.h>
 #include <math.h>
@@ -78,9 +79,9 @@ inline void shootingSystem(ecs::Registry &reg, float dt)
         createBullet(reg, it.x, it.y);
 }
 
-inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer)
+inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer, client::TextureManager &textures)
 {
-    for (auto ent: reg.view<Hitbox, Position, Renderable>()) {
+    for (auto ent : reg.view<Hitbox, Position, Renderable>().without<Sprite>()) {
         auto &pos = reg.get<Position>(ent);
         auto &box = reg.get<Hitbox>(ent);
         auto &cl = reg.get<Renderable>(ent);
@@ -88,6 +89,19 @@ inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer)
         SDL_FRect rect = {pos.x, pos.y, box.w, box.h};
         SDL_SetRenderDrawColor(renderer, cl.r, cl.g, cl.b, cl.a);
         SDL_RenderFillRect(renderer, &rect);
+    }
+
+    for (auto ent : reg.view<Hitbox, Position, Sprite>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+        auto &spr = reg.get<Sprite>(ent);
+
+        SDL_Texture *tex = textures.get(renderer, spr.texture);
+        if (!tex)
+            continue;
+        SDL_FRect src = {spr.col * spr.frameW, spr.row * spr.frameH, spr.frameW, spr.frameH};
+        SDL_FRect dst = {pos.x, pos.y, box.w, box.h}; // sprite calé sur la hitbox
+        SDL_RenderTexture(renderer, tex, &src, &dst);
     }
 }
 
@@ -176,4 +190,13 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
 
     for (auto ent : toDestroy)
         reg.delete_entity(ent);
+}
+
+inline void shipTiltSystem(ecs::Registry &reg, float)
+{
+    for (auto ent : reg.view<Velocity, Sprite, Controllable>()) {
+        auto &v = reg.get<Velocity>(ent);
+        auto &s = reg.get<Sprite>(ent);
+        s.col = v.y < 0.f ? 4 : (v.y > 0.f ? 0 : 2); // inverse 4 et 0 si c'est à l'envers
+    }
 }

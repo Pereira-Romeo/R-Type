@@ -16,6 +16,7 @@
 #include "GameLogic/Factories.hpp"
 #include "GameLogic/Systems.hpp"
 #include "SceneManager.hpp"
+#include "TextureManager.hpp"
 
 #include <array>
 #include <optional>
@@ -44,6 +45,7 @@ namespace client
             SDL_Renderer *_renderer = nullptr;
             ecs::Registry _registry;
             StarField _starfield;
+            TextureManager _textures;
 
             Network *_net;
             std::array<std::optional<size_t>, proto::MAX_PLAYERS> _remotes;

@@ -15,7 +15,8 @@
 #include <math.h>
 
 
-inline size_t createPlayer(ecs::Registry &reg, float x, float y, uint8_t r, uint8_t g, uint8_t b, bool local)
+inline size_t createPlayer(ecs::Registry &reg, std::uint8_t id, float x, float y,
+    uint8_t r, uint8_t g, uint8_t b, bool local)
 {
     size_t ent = reg.create_entity(local ? "Player" : "RemotePlayer");
     reg.add<Position>(ent, {x, y});
@@ -25,6 +26,8 @@ inline size_t createPlayer(ecs::Registry &reg, float x, float y, uint8_t r, uint
     reg.add<Controllable>(ent, {300.f});
     reg.add<InputState>(ent, {});
     reg.add<Shooter>(ent, {0.0f, 0.2f});
+    reg.add<Renderable>(ent, {r, g, b, 255});
+    reg.add<Sprite>(ent, {"assets/ship.gif", id % 5, 2, 166.f / 5, 86.f / 5});
     if (local)
         reg.add<LocalPlayer>(ent, {});
     return ent;

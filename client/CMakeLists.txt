@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(SDL3 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
+find_package(SDL3_image CONFIG REQUIRED)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
@@ -33,4 +34,8 @@ ${CMAKE_SOURCE_DIR}
 target_compile_definitions(r-type_client PRIVATE ASIO_STANDALONE)
 
 target_link_libraries(r-type_client PRIVATE project_options game_engine SDL3::SDL3
-    Threads::Threads)
+        SDL3_image::SDL3_image Threads::Threads)
+
+add_custom_command(TARGET r-type_client POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:r-type_client>/assets)

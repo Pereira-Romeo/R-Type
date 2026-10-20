@@ -10,8 +10,8 @@
 namespace client
 {
     GameScene::GameScene(SceneManager &scenes, Network *net, float screenWidth, float screenHeight)
-        : _scenes(scenes), _screenWidth(screenWidth), _screenHeight(screenHeight), _net(net),
-        _starfield(screenWidth, screenHeight, 250)
+        : _scenes(scenes), _screenWidth(screenWidth), _screenHeight(screenHeight),
+        _starfield(screenWidth, screenHeight, 250), _net(net)
     {
     }
 
@@ -47,20 +47,21 @@ namespace client
         _registry.register_component<Velocity>();
         _registry.register_component<Hitbox>();
         _registry.register_component<Renderable>();
+        _registry.register_component<Sprite>();
         _registry.register_component<Controllable>();
         _registry.register_component<Shooter>();
         _registry.register_component<Projectile>();
         _registry.register_component<Enemy>();
         _registry.register_component<NetEnemy>();
 
-        createPlayer(_registry, proto::startX(),
+        createPlayer(_registry, w.player.id, proto::startX(),
             proto::startY(w.player.id), w.player.r, w.player.g, w.player.b, true);
 
         for (const auto &o : w.others) {
             if (o.id >= _remotes.size() || o.id == w.player.id)
                 continue;
 
-            _remotes[o.id] = createPlayer(_registry,
+            _remotes[o.id] = createPlayer(_registry, o.id,
                 proto::startX(), proto::startY(o.id), o.r, o.g, o.b, false);
         }
     
@@ -80,9 +81,11 @@ namespace client
         _schedule.add(Bucket::Fin, "Destroy bullet", [this](ecs::Registry &reg, float dt) {
             offscreenSystem(reg, _screenWidth);
         });
-        _schedule.add(Bucket::Rendu, "render", [this](ecs::Registry &reg, float dt) {
-            renderSystem(reg, this->_renderer);
+        _schedule.add(Bucket::Update, "ship tilt", shipTiltSystem);
+        _schedule.add(Bucket::Rendu, "render", [this](ecs::Registry &reg, float) {
+            renderSystem(reg, _renderer, _textures);
         });
+
     }
 
     void GameScene::onUnload()
@@ -97,6 +100,7 @@ namespace client
         _renderer = nullptr;
         _spawnTimer = 0.f;
         _connected = false;
+        _textures.clear();
     }
 
     void GameScene::handleEvent(const SDL_Event &event)
@@ -115,7 +119,7 @@ namespace client
             switch (e.kind) {
             case NetEvent::Kind::PlayerJoined:
                 if (e.id < _remotes.size() && !_remotes[e.id])
-                    _remotes[e.id] = createPlayer(_registry, proto::startX(),
+                    _remotes[e.id] = createPlayer(_registry, e.id, proto::startX(),
                         proto::startY(e.id), e.r, e.g, e.b, false);
                 break;
             case NetEvent::Kind::PlayerInput:
