@@ -7,7 +7,7 @@ namespace ecs
 {
 
 	/**
-	 * Template class for the SparseSet.
+	 * Interface class for the SparseSet.
 	 * It is used to hold all component pools in a single vector in the Registry
 	 */
     class ISparseSet
