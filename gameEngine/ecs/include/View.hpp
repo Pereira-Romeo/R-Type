@@ -11,6 +11,7 @@ namespace ecs
      *  - Iteration over a Registry with components based selection
      *  - Exclusion of certain components (useful with Tags for example)
      * It is usually created from a Registry using the Registry::view method.
+     * @tparam Components... Required components to validate entity
      */
     template <typename... Components>
     class View
@@ -81,6 +82,7 @@ namespace ecs
 
         /**
          * Sets the list of excluded components. Invalid components will be skipped.
+         * @tparam ExcludedComponents... Components to be excluded from iteration
          */
         template <typename... ExcludedComponents>
         View &without() &
@@ -97,6 +99,7 @@ namespace ecs
 
         /**
          * Sets the list of excluded components. Invalid components will be skipped.
+         * @tparam ExcludedComponents... Components to be excluded from iteration
          */
         template <typename... ExcludedComponents>
         View without() &&
