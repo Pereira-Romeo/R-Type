@@ -72,6 +72,7 @@ namespace ecs
         /**
          * Returns the unique index assigned to the given type.
          * It is computed at compile time, hence the static specifier.
+         * @tparam T Type of element
          * @return Unique index of the templated type
          */
         template <typename T>
@@ -83,6 +84,7 @@ namespace ecs
 
         /**
          * Useful utilitary that does the same as get_component_id, only if the given type is not yet registered, it is added to the Registry.
+         * @tparam T Type of element
          * @return Unique index of the templated type
          */
         template <typename T>
@@ -100,6 +102,7 @@ namespace ecs
          * Returns a pointer to the templated type's corresponding component pool.
          *
          * If component is not registered, this returns nullptr.
+         * @tparam T Type of component
          * @return Pointer to templated type's pool or nullptr
          */
         template <typename T>
@@ -117,6 +120,7 @@ namespace ecs
          * Returns a reference to the templated type's corresponding component pool by performing a downcast operation on it.
          *
          * Calling this function on an unregistered type leads to undefined behaviour.
+         * @tparam T Type of component
          * @return Reference to underlying SparseSet of templated type
          */
         template <typename T>
@@ -220,6 +224,7 @@ namespace ecs
          * Registers a new component to the Registry.
          *
          * If component is already registered, does nothing.
+         * @tparam T Type of component
          */
         template <typename T>
         void register_component()
@@ -242,12 +247,14 @@ namespace ecs
          * Adds a new component to the given entity. If a component of same type is already present, it is overwritten.
          *
          * If the component is not yet registered, it is added to the Registry. It is better to register components first for readability's sake.
+         * @tparam T Type of component
+         * @tparam Args... Arg types
          * @param entity Entity index
          * @param component Component data
          * @return Reference to newly added component
          */
-        template <typename T>
-        T &add(size_t entity, T &&component = {})
+        template <typename T, typename... Args>
+        T &add(size_t entity, Args &&...args)
         {
             ECS_ASSERT_VALID_ENTITY(entity);
             ECS_ASSERT_ALIVE_ENTITY(entity);
@@ -255,13 +262,14 @@ namespace ecs
             get_or_register_component_index<T>();
             SparseSet<T> &pool = get_component_pool<T>();
 
-            return pool.set(entity, component);
+            return pool.set(entity, T{std::forward<Args>(args)...});
         }
 
         /**
          * Gets a reference to the component attached to the given entity.
          *
          * If the given component is unregistered, the entity is invalid, or it is missing given component type, this function has undefined behavior.
+         * @tparam T Type of component
          * @param entity Entity index
          * @return Reference to the component attached to entity
          */
@@ -282,6 +290,7 @@ namespace ecs
 
         /**
          * Gets a pointer to the component attached to the given entity. If entity is invalid or does not have such component, returns nullptr.
+         * @tparam T Type of component
          * @param entity Entity index
          * @return Pointer to entity's attached component
          */
@@ -297,6 +306,7 @@ namespace ecs
 
         /**
          * Removes a component of given type from the entity if one is attached.
+         * @tparam T Type of component
          * @param entity Entity index
          */
         template <typename T>
@@ -322,6 +332,7 @@ namespace ecs
 
         /**
          * Returns true if the given entity has every one of the given components.
+         * @tparam Ts Types of desired components
          * @param entity Entity index
          */
         template <typename... Ts>
@@ -335,6 +346,7 @@ namespace ecs
 
         /**
          * Returns true if the given entity has the given components.
+         * @tparam T Type of desired component
          * @param entity Entity index
          */
         template <typename T>
@@ -346,6 +358,7 @@ namespace ecs
 
         /**
          * Returns true if the given entity has any of the given components.
+         * @tparam Ts Types of desired components
          * @param entity Entity index
          */
         template <typename... Ts>
@@ -356,6 +369,7 @@ namespace ecs
 
         /**
          * Returns a View object to freely iterate over the elements of the Registry based on the components they own. The chosen types are set using templates. See View.hpp for more information about this class.
+         * @tparam Components Types of desired components
          */
         template <typename... Components>
         View<Components...> view();
@@ -379,7 +393,6 @@ namespace ecs
     };
 
 } // namespace ecs
-
 
 // Need to define this function after View class is implemented.
 
