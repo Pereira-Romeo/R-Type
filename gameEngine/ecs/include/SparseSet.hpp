@@ -17,6 +17,7 @@ namespace ecs
      *  - that it owns all of the components, thus avoiding ownership troubles. Getting components is done through using an entity id
      *  - it allows for O(1) lookups, adding and deletion
      *  - it keeps actual data contiguous, making it cache friendly
+     * @tparam T Type of element
      */
     template <typename T>
     class SparseSet : public ISparseSet
