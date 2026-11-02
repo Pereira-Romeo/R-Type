@@ -9,14 +9,17 @@
 
 #include "Registry.hpp"
 #include "Components.hpp"
-#include "Factories.hpp"
-#include "TextureManager.hpp"
+#include "ScriptEngine/ScriptEngine.hpp"
 
 #include <SDL3/SDL.h>
 #include <math.h>
 #include <set>
 #include <cstdlib>
-#include "Network.hpp"
+
+inline bool onScreen(const Position &pos, const Hitbox &box, float screenW, float screenH)
+{
+    return !(pos.x >= screenW || pos.x + box.w <= 0 || pos.y >= screenH || pos.y + box.h <= 0);
+}
 
 inline void movementSystem(ecs::Registry &reg, float dt)
 {
@@ -32,8 +35,7 @@ inline void inputSystem(ecs::Registry &reg, SDL_Gamepad *pad)
 {
     const bool *keys = SDL_GetKeyboardState(nullptr);
 
-    for (auto ent : reg.view<InputState, LocalPlayer>())
-    {
+    for (auto ent : reg.view<InputState, Controllable>()) {
         auto &in = reg.get<InputState>(ent);
         in.up = (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] || (pad && SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP)));
         in.down = (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] || (pad && SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_DOWN)));
@@ -59,9 +61,10 @@ inline void controlSystem(ecs::Registry &reg, float dt)
     }
 }
 
-inline void shootingSystem(ecs::Registry &reg, float dt)
+struct wts {std::string weapon; float x = 0.f, y = 0.f;};
+inline void shootingSystem(ecs::Registry &reg, float dt, ScriptEngine &se)
 {
-    auto whereToShoot = std::vector<Position>{};
+    auto whereToShoot = std::vector<wts>{};
 
     for (auto ent: reg.view<Shooter, Position, Hitbox, InputState>()) {
         auto &sh = reg.get<Shooter>(ent);
@@ -71,35 +74,48 @@ inline void shootingSystem(ecs::Registry &reg, float dt)
         if (sh.cooldown > 0.0f)
             sh.cooldown -= dt;
         if (reg.get<InputState>(ent).shoot && sh.cooldown <= 0.0f){ 
-            whereToShoot.push_back({pos.x + box.w, pos.y + box.h / 2.0f});
-            sh.cooldown = sh.interval;
+            whereToShoot.push_back({sh.weapon, pos.x + box.w, pos.y + box.h / 2.0f});
+            sh.cooldown = se.weaponInterval(sh.weapon);
         }
     }
     for (auto it: whereToShoot)
-        createBullet(reg, it.x, it.y);
+        se.fireWeapon(it.weapon, it.x, it.y);
 }
 
-inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer, client::TextureManager &textures)
+inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer, client::TextureManager &textures, float screenW, float screenH)
 {
-    for (auto ent : reg.view<Hitbox, Position, Renderable>().without<Sprite>()) {
+    for (auto ent: reg.view<Hitbox, Position, Renderable>().without<Sprite>()) {
         auto &pos = reg.get<Position>(ent);
         auto &box = reg.get<Hitbox>(ent);
         auto &cl = reg.get<Renderable>(ent);
 
+        if (pos.x >= screenW || pos.x + box.w <= 0 || pos.y >= screenH || pos.y + box.h <= 0)
+            continue;
         SDL_FRect rect = {pos.x, pos.y, box.w, box.h};
         SDL_SetRenderDrawColor(renderer, cl.r, cl.g, cl.b, cl.a);
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    for (auto ent : reg.view<Hitbox, Position, Sprite>()) {
+    for (auto ent : reg.view<Hitbox, Position, Sprite, Renderable>()) {
         auto &pos = reg.get<Position>(ent);
         auto &box = reg.get<Hitbox>(ent);
         auto &spr = reg.get<Sprite>(ent);
 
-        SDL_Texture *tex = textures.get(renderer, spr.texture);
-        if (!tex)
+        if (pos.x >= screenW || pos.x + box.w <= 0 || pos.y >= screenH || pos.y + box.h <= 0)
             continue;
-        SDL_FRect src = {spr.col * spr.frameW, spr.row * spr.frameH, spr.frameW, spr.frameH};
+        SDL_Texture *tex = textures.get(renderer, spr.texture);
+        if (!tex)   {
+            auto &cl = reg.get<Renderable>(ent);
+            SDL_FRect rect = {pos.x, pos.y, box.w, box.h};
+            SDL_SetRenderDrawColor(renderer, cl.r, cl.g, cl.b, cl.a);
+            SDL_RenderFillRect(renderer, &rect);
+            continue;
+        }
+        SDL_FRect src;
+        if (spr.srcW > 0)
+            src = {spr.srcX, spr.srcY, spr.srcW, spr.srcH};
+        else
+            src = {spr.col * spr.frameW, spr.row * spr.frameH, spr.frameW, spr.frameH};
         SDL_FRect dst = {pos.x, pos.y, box.w, box.h}; // sprite calé sur la hitbox
         SDL_RenderTexture(renderer, tex, &src, &dst);
     }
@@ -119,10 +135,17 @@ inline void offscreenSystem(ecs::Registry &reg, float screenWidth)
 {
     auto toDestroy = std::vector<size_t>{};
 
-    for (auto ent : reg.view<Position, Hitbox>().without<Controllable>()) {
+    for (auto ent : reg.view<Position, Hitbox>().without<Controllable, Projectile>()) {
         auto &pos = reg.get<Position>(ent);
         auto &box = reg.get<Hitbox>(ent);
-        if (pos.x >= screenWidth + 100.f || pos.x <= -box.w)
+        if (pos.x <= -box.w)
+            toDestroy.push_back(ent);
+    }
+
+    for (auto ent : reg.view<Position, Hitbox, Projectile>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+        if (pos.x >= screenWidth || pos.x <= -box.w)
             toDestroy.push_back(ent);
     }
 
@@ -136,7 +159,7 @@ inline bool overlaps(const Position &pa, const Hitbox &ba, const Position &pb, c
              pa.y + ba.h <= pb.y || pa.y >= pb.y + bb.h);
 }
 
-inline void collisionSystem(ecs::Registry &reg, float dt, Network *net)
+inline void collisionSystem(ecs::Registry &reg, float dt)
 {
     auto toDestroy = std::set<size_t>{};
 
@@ -144,13 +167,13 @@ inline void collisionSystem(ecs::Registry &reg, float dt, Network *net)
         auto &bpos = reg.get<Position>(bullet);
         auto &bbox = reg.get<Hitbox>(bullet);
 
-        for (auto enemy : reg.view<Position, Hitbox, NetEnemy>()) {
+        for (auto enemy : reg.view<Position, Hitbox, Enemy>()) {
             auto &epos = reg.get<Position>(enemy);
             auto &ebox = reg.get<Hitbox>(enemy);
 
             if (overlaps(bpos, bbox, epos, ebox)) {
                 toDestroy.insert(bullet);
-                net->sendEnemyKilled(reg.get<NetEnemy>(enemy).id);
+                toDestroy.insert(enemy);
             }
         }
     }
@@ -158,22 +181,11 @@ inline void collisionSystem(ecs::Registry &reg, float dt, Network *net)
         reg.delete_entity(ent);
 }
 
-inline void enemySpawnSystem(ecs::Registry &reg, float dt, float &timer, float screenWidth, float screenHeight)
-{
-    timer += dt;
-    float spawnInterval = 1.5f;
-
-    if (timer >= spawnInterval) {
-        timer = 0.f;
-        createEnemy(reg, screenWidth, (float)(std::rand() % (int)(screenHeight - 31)));
-    }
-}
-
 inline void playerHitSystem(ecs::Registry &reg, float dt)
 {
     auto toDestroy = std::set<size_t>{};
 
-    for (auto player : reg.view<Position, Hitbox, LocalPlayer>()) {
+    for (auto player : reg.view<Position, Hitbox, Controllable>()) {
         auto &ppos = reg.get<Position>(player);
         auto &pbox = reg.get<Hitbox>(player);
 
@@ -183,7 +195,19 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
 
             if (overlaps(ppos, pbox, epos, ebox)) {
                 toDestroy.insert(player);
-                //toDestroy.insert(enemy);
+                toDestroy.insert(enemy);
+            }
+        }
+    }
+
+    for (auto bullet : reg.view<Position, Hitbox, EnemyProjectile>()) {
+        auto &bpos = reg.get<Position>(bullet);
+        auto &bbox = reg.get<Hitbox>(bullet);
+
+        for (auto player : reg.view<Position, Hitbox, Controllable>()) {
+            if (overlaps(bpos, bbox, reg.get<Position>(player), reg.get<Hitbox>(player))) {
+                toDestroy.insert(bullet);
+                toDestroy.insert(player);
             }
         }
     }
@@ -199,4 +223,48 @@ inline void shipTiltSystem(ecs::Registry &reg, float)
         auto &s = reg.get<Sprite>(ent);
         s.col = v.y < 0.f ? 4 : (v.y > 0.f ? 0 : 2); // inverse 4 et 0 si c'est à l'envers
     }
+}
+
+inline void animationSystem(ecs::Registry &reg, float dt, float screenW, float screenH)
+{
+    for (auto ent : reg.view<Animation, Sprite, Position, Hitbox>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+        auto &anim = reg.get<Animation>(ent);
+        auto &spr = reg.get<Sprite>(ent);
+
+        if (!onScreen(pos, box, screenW, screenH))
+            continue;
+        anim.finishedCycle = false;
+        anim.timer += dt;
+        while (anim.timer >= anim.frameTime) {
+            anim.timer -= anim.frameTime;
+            if (anim.index + 1 < anim.frames) {
+                anim.index++;
+                if (anim.index == anim.frames - 1)
+                    anim.finishedCycle = true;
+            } else if (anim.loop)
+                anim.index = 0;
+        }
+        spr.col = anim.index % anim.cols;
+        spr.row = anim.index / anim.cols;
+    }
+}
+
+inline void enemyShootingSystem(ecs::Registry &reg, float, ScriptEngine &se, float screenW, float screenH)
+{
+    auto shots = std::vector<wts>{};
+
+    for (auto ent : reg.view<Animation, EnemyShooter, Position, Hitbox>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+
+        if (!onScreen(pos, box, screenW, screenH))
+            continue;
+        if (!reg.get<Animation>(ent).finishedCycle)
+            continue;
+        shots.push_back({reg.get<EnemyShooter>(ent).weapon, pos.x, pos.y + box.h / 2.0f});
+    }
+    for (auto &s : shots)
+        se.fireWeapon(s.weapon, s.x, s.y);
 }
