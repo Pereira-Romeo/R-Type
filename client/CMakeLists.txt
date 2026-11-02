@@ -8,6 +8,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(SDL3 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 find_package(SDL3_image CONFIG REQUIRED)
+find_package(sol2 CONFIG REQUIRED)
+find_package(Lua REQUIRED)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
@@ -24,7 +26,7 @@ ${CLIENT_SOURCES}
 ${CMAKE_SOURCE_DIR}/frameBufferHandler/src/FrameBufferHandler.cpp
 ${CMAKE_SOURCE_DIR}/common/src/Protocol.cpp
 )
-target_include_directories(r-type_client PRIVATE ${CMAKE_SOURCE_DIR}/common/include)
+target_include_directories(r-type_client PRIVATE ${CMAKE_SOURCE_DIR}/common/include ${LUA_INCLUDE_DIR})
 target_include_directories(r-type_client PRIVATE
     include
 ${CMAKE_SOURCE_DIR}/frameBufferHandler/include
@@ -34,7 +36,7 @@ ${CMAKE_SOURCE_DIR}
 target_compile_definitions(r-type_client PRIVATE ASIO_STANDALONE)
 
 target_link_libraries(r-type_client PRIVATE project_options game_engine SDL3::SDL3
-        SDL3_image::SDL3_image Threads::Threads)
+        SDL3_image::SDL3_image Threads::Threads sol2::sol2 ${LUA_LIBRARIES})
 
 add_custom_command(TARGET r-type_client POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
