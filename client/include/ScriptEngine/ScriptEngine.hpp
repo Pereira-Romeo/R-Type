@@ -14,6 +14,7 @@
 #include <vector>
 #include <SDL3/SDL.h>
 #include <sol/sol.hpp>
+#include <map>
 
 class ScriptEngine {
 public:
@@ -33,10 +34,14 @@ public:
     void  fireWeapon(const std::string &name, float x, float y);
     float weaponInterval(const std::string &name);
 
+    void spawnMonster(const std::string &name, float x, float y);
+
 private:
     void registerBindings(float screenW, float screenH);
     void registerDraw();
     sol::optional<size_t> spawn(const sol::table &def);
+
+    std::map<std::string, sol::protected_function> _monsters;
 
     Create _create;
     Destroy _destroy;

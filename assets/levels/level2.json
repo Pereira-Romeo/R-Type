@@ -1,0 +1,39 @@
+{
+    "background": "",
+    "boss": {
+        "preset": "",
+        "script": "",
+        "sprite": "",
+        "trigger_x": 0
+    },
+    "music": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/music/Tesla-Jingle.mp3",
+    "name": "",
+    "waves": [
+        {
+            "length": 1000,
+            "name": "Wave 1",
+            "spawns": [
+                {
+                    "count": 2,
+                    "preset": "",
+                    "script": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/scripts/02_ennemy.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 250
+        },
+        {
+            "length": 1000,
+            "name": "Wave 2",
+            "spawns": [
+                {
+                    "count": 1,
+                    "preset": "",
+                    "script": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/bosses/bosstest.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 1450
+        }
+    ]
+}

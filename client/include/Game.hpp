@@ -41,5 +41,6 @@ namespace client
             ClientContext _context;
             SceneManager _scenes;
             bool _running = true;
+            std::string _levelPath;
     };
 }

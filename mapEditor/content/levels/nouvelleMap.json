@@ -1,0 +1,42 @@
+{
+    "background": "",
+    "boss": {
+        "preset": "",
+        "script": "",
+        "sprite": "",
+        "trigger_x": 0
+    },
+    "end_condition": {
+        "preset": "",
+        "type": ""
+    },
+    "music": "",
+    "name": "",
+    "waves": [
+        {
+            "length": 1000,
+            "name": "Wave 1",
+            "spawns": [
+                {
+                    "count": 1,
+                    "preset": "",
+                    "script": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/scripts/01_player.lua",
+                    "sprite": ""
+                },
+                {
+                    "count": 3,
+                    "preset": "",
+                    "script": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/scripts/00_shoot.lua",
+                    "sprite": ""
+                },
+                {
+                    "count": 1,
+                    "preset": "",
+                    "script": "/home/dan/Documents/Tek/Tek3/R-Type/build/linux-debug/bin/assets/scripts/02_ennemy.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 1000
+        }
+    ]
+}

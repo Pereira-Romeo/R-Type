@@ -6,6 +6,11 @@
     "sdl3",
     "sdl3-image",
     "sol2",
-    "lua"
+    "lua",
+    "nlohmann-json",
+    {
+      "name": "imgui",
+      "features": ["sdl3-binding", "sdl3-renderer-binding"]
+    }
   ]
 }

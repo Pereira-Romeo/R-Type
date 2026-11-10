@@ -15,6 +15,7 @@ namespace client
           _screenWidth(screenWidth)
     {
         _buttons.addButton("PLAY", [this]() { _scenes.switchScene("playmenu"); });
+        _buttons.addButton("LEVEL EDITOR", [this]() { _scenes.switchScene("menueditor"); });
         _buttons.addButton("SETTINGS", [this]() { _scenes.switchScene("settings"); });
         _buttons.addButton("QUIT", [this]() { _scenes.requestQuit(); });
     }

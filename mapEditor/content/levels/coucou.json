@@ -1,0 +1,15 @@
+{
+    "background": "",
+    "boss": {
+        "preset": "",
+        "script": "",
+        "trigger_x": 0
+    },
+    "end_condition": {
+        "preset": "",
+        "type": ""
+    },
+    "music": "",
+    "name": "coucou",
+    "waves": []
+}

@@ -37,6 +37,10 @@ void ScriptEngine::registerBindings(float screenW, float screenH)
     });
     _lua.set_function("log", [](const std::string &s) { SDL_Log("[lua] %s", s.c_str()); });
     _lua.set_function("on_update", [this](sol::protected_function func) {_callbacks.push_back(func);});
+
+    _lua.set_function("register_monster", [this](const std::string &name, sol::protected_function fn) {
+        _monsters[name] = fn;
+    });
 }
 
 sol::optional<size_t> ScriptEngine::spawn(const sol::table &def) 
@@ -182,4 +186,22 @@ float ScriptEngine::weaponInterval(const std::string &name)
         return _fallback;
     }
     return weapon->get_or("interval", _fallback);
+}
+
+void ScriptEngine::spawnMonster(const std::string &name, float x, float y)
+{
+    SDL_Log("[lua] spawnMonster(%s, %f, %f)", name.c_str(), x, y);
+    auto it = _monsters.find(name);
+    if (it == _monsters.end()) {
+        SDL_Log("[lua] unknown monster %s", name.c_str());
+        for (const auto &[k, v] : _monsters)
+            SDL_Log("[lua]   registered: '%s'", k.c_str());
+        return;
+    }
+
+    auto r = it->second(x, y);
+    if (!r.valid()) {
+        sol::error err = r;
+        SDL_Log("[lua] spawnMonster %s: %s", name.c_str(), err.what());
+    }
 }

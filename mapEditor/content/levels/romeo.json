@@ -1,0 +1,176 @@
+{
+    "background": "",
+    "boss": {
+        "preset": "",
+        "script": "",
+        "sprite": "",
+        "trigger_x": 0
+    },
+    "end_condition": {
+        "preset": "",
+        "type": ""
+    },
+    "music": "",
+    "name": "romeo",
+    "waves": [
+        {
+            "length": 1000,
+            "name": "Wave 1",
+            "spawns": [
+                {
+                    "count": 3,
+                    "preset": "",
+                    "script": "./content/scripts/test.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 500
+        },
+        {
+            "length": 1000,
+            "name": "Wave 2",
+            "spawns": [],
+            "start_x": 1700
+        },
+        {
+            "length": 1000,
+            "name": "Wave 3",
+            "spawns": [],
+            "start_x": 2900
+        },
+        {
+            "length": 1000,
+            "name": "Wave 4",
+            "spawns": [],
+            "start_x": 4100
+        },
+        {
+            "length": 1000,
+            "name": "Wave 5",
+            "spawns": [],
+            "start_x": 5300
+        },
+        {
+            "length": 1000,
+            "name": "Wave 6",
+            "spawns": [],
+            "start_x": 6500
+        },
+        {
+            "length": 1000,
+            "name": "Wave 7",
+            "spawns": [],
+            "start_x": 7700
+        },
+        {
+            "length": 1000,
+            "name": "Wave 8",
+            "spawns": [],
+            "start_x": 8900
+        },
+        {
+            "length": 1000,
+            "name": "Wave 9",
+            "spawns": [],
+            "start_x": 10100
+        },
+        {
+            "length": 1000,
+            "name": "Wave 10",
+            "spawns": [],
+            "start_x": 11300
+        },
+        {
+            "length": 1000,
+            "name": "Wave 11",
+            "spawns": [
+                {
+                    "count": 3,
+                    "preset": "",
+                    "script": "./content/scripts/test.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 12500
+        },
+        {
+            "length": 1000,
+            "name": "Wave 12",
+            "spawns": [
+                {
+                    "count": 3,
+                    "preset": "",
+                    "script": "./content/scripts/test.lua",
+                    "sprite": ""
+                }
+            ],
+            "start_x": 13700
+        },
+        {
+            "length": 1000,
+            "name": "Wave 13",
+            "spawns": [],
+            "start_x": 14900
+        },
+        {
+            "length": 1000,
+            "name": "Wave 14",
+            "spawns": [],
+            "start_x": 16100
+        },
+        {
+            "length": 1000,
+            "name": "Wave 15",
+            "spawns": [],
+            "start_x": 17300
+        },
+        {
+            "length": 1000,
+            "name": "Wave 16",
+            "spawns": [],
+            "start_x": 18500
+        },
+        {
+            "length": 1000,
+            "name": "Wave 17",
+            "spawns": [],
+            "start_x": 19700
+        },
+        {
+            "length": 1000,
+            "name": "Wave 18",
+            "spawns": [],
+            "start_x": 20900
+        },
+        {
+            "length": 1000,
+            "name": "Wave 19",
+            "spawns": [],
+            "start_x": 22100
+        },
+        {
+            "length": 1000,
+            "name": "Wave 20",
+            "spawns": [],
+            "start_x": 23300
+        },
+        {
+            "length": 1000,
+            "name": "Wave 21",
+            "spawns": [],
+            "start_x": 24500
+        },
+        {
+            "length": 1000,
+            "name": "Wave 22",
+            "spawns": [],
+            "start_x": 25700
+        },
+        {
+            "length": 1000,
+            "name": "Wave 23",
+            "spawns": [],
+            "start_x": 26900
+        }
+    ]
+}

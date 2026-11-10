@@ -57,3 +57,11 @@ WEAPONS.enemy_basic = {
         enemy_bullet(x - w, y - h / 2, -400, 0, ENEMY_SRC, w, h)
     end,
 }
+
+WEAPONS.ground_shot = {
+    interval = 2.0,
+    fire = function(x, y)
+        local w, h = ENEMY_SRC.w * 2, ENEMY_SRC.h * 2
+        enemy_bullet(x - w, y - h / 2, -250, -250, ENEMY_SRC, w, h)
+    end,
+}

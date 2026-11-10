@@ -1,0 +1,45 @@
+{
+    "background": "assets/backgrounds/space_01.png",
+    "boss": {
+        "preset": "dobkeratops",
+        "script": "content/bosses/dobkeratops.lua",
+        "trigger_x": 6000
+    },
+    "end_condition": {
+        "preset": "dobkeratops",
+        "type": "boss_defeated"
+    },
+    "music": "assets/music/level1.ogg",
+    "name": "Level 1",
+    "waves": [
+        {
+            "length": 1000,
+            "name": "Intro",
+            "spawns": [
+                {
+                    "count": 4,
+                    "preset": "snake",
+                    "script": "content/monsters/snake.lua"
+                },
+                {
+                    "count": 2,
+                    "preset": "turret",
+                    "script": "content/monsters/turret.lua"
+                }
+            ],
+            "start_x": 0
+        },
+        {
+            "length": 800,
+            "name": "Second wave",
+            "spawns": [
+                {
+                    "count": 6,
+                    "preset": "snake",
+                    "script": "content/monsters/snake.lua"
+                }
+            ],
+            "start_x": 1500
+        }
+    ]
+}

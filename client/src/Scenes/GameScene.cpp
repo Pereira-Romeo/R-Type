@@ -6,6 +6,7 @@
 */
 
 #include "../../include/GameScene.hpp"
+#include <SDL3/SDL_log.h>
 
 namespace client
 {
@@ -52,6 +53,10 @@ namespace client
         registerLuaComponents();
         _scriptEngine->loadDir("assets/scripts");
 
+        auto lvl = jsonHandler::LoadLevel("assets/levels/level1.json");
+        SDL_Log("[level] %s : %zu vagues", lvl.name.c_str(), lvl.waves.size());
+        _level.load(lvl);
+    
         // ===== INPUT =====
         _schedule.add(Bucket::Input, "input", [this](ecs::Registry &reg, float) {
             inputSystem(reg, _gamepad);
@@ -174,6 +179,7 @@ namespace client
         se.registerComponent("enemy", [this](size_t e, const sol::table &) {
             _registry.add<Enemy>(e);
         });
+
         se.registerComponent("projectile", [this](size_t e, const sol::table &) {
             _registry.add<Projectile>(e);
         });
@@ -188,6 +194,13 @@ namespace client
     void GameScene::update(float deltaTime)
     {
         _scriptEngine.get()->update(deltaTime);
+
+        const float SCROLL_SPEED = 100.0f;   // unités du niveau par seconde
+        _level.update(deltaTime, SCROLL_SPEED, [&](const SpawnEvent &e) {
+            float y = (float)(std::rand() % (int)(_screenHeight - 75.0f));
+            _scriptEngine->spawnMonster(e.monster, _screenWidth, y);
+        });
+
         _schedule.run(_registry, deltaTime, Bucket::Input, Bucket::Fin);
         
         bool alive = false;

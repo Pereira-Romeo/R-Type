@@ -12,6 +12,9 @@
 #include "ScriptEngine/ScriptEngine.hpp"
 #include "TextureManager.hpp"
 
+#include "../include/LevelRunner.hpp"
+#include "../../jsonHandler/jsonHandler.hpp"
+
 #include "Registry.hpp"
 #include "ScheduleManager.hpp"
 #include "GameLogic/Components.hpp"
@@ -40,6 +43,7 @@ namespace client
             SDL_Renderer *_renderer = nullptr;
             ecs::Registry _registry;
             std::unique_ptr<ScriptEngine> _scriptEngine;
+            LevelRunner _level;
             TextureManager _textures;
             bool _playerSeen = false;
     };
