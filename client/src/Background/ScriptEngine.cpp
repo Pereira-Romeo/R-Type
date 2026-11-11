@@ -79,11 +79,15 @@ void ScriptEngine::loadDir(const std::filesystem::path &dir)
         return;
     }
 
-    for (auto &e : std::filesystem::directory_iterator(dir))
+    for (auto &e : std::filesystem::recursive_directory_iterator(dir))
         if (e.path().extension() == ".lua")
             files.push_back(e.path());
-    std::sort(files.begin(), files.end());
-
+    
+    std::sort(files.begin(), files.end(), [](const auto &a, const auto &b) {
+        if (a.filename() != b.filename())
+            return a.filename() < b.filename();
+        return a < b;
+    });
     for (auto &f : files) {
         auto r = _lua.safe_script_file(f.string(), sol::script_pass_on_error);
         if (!r.valid()) {

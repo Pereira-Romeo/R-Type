@@ -1,5 +1,6 @@
 player = spawn({
     name         = "Player",
+    stat         = { life = 100, lifeMax = 100},
     position     = { x = 100, y = SCREEN_H / 2 },
     hitbox       = { w = 60, h = 30 },
     velocity     = {},
