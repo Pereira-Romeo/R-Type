@@ -5,12 +5,12 @@
 ** EditorScene
 */
 
-#include "../../include/EditorScene.hpp"
 #include <string>
-#include "imgui_stdlib.h"
 #include <iostream>
 #include <filesystem>
+#include "../../include/EditorScene.hpp"
 #include "../include/EditorUtils.hpp"
+#include "imgui_stdlib.h"
 
 std::string fileName(const std::string &path)
 {
@@ -18,21 +18,30 @@ std::string fileName(const std::string &path)
 }
 
 client::EditorScene::EditorScene(client::SceneManager &scenes, std::string &levelPath, float screenWidth, float screenHeight)
-: _scenes(scenes), _levelPath(levelPath), _buttons(screenWidth / 2.0f, screenHeight / 2.0f, 300.0f, 60.0f, 20.0f)
+: _scenes(scenes), _levelPath(levelPath)
 {}
-
-void client::EditorScene::LoadLevel()
-{
-    _levelData = jsonHandler::LoadLevel(_levelPath);
-}
 
 void client::EditorScene::onLoad()
 {
     if (_levelPath != std::string())
         LoadLevel();
+
     LoadScript();
     LoadBoss();
     LoadMusic();
+}
+
+void client::EditorScene::onUnload()
+{
+    SDL_Log("[editor] onUnload");
+    _levelData = jsonHandler::levelData_t{};
+    _selectedWave = -1;
+    _modified = false;
+    _camX = -50.0f;
+    _levelPath.clear();
+    _scriptFiles.clear();
+    _bossFiles.clear();
+    _musicFiles.clear();
 }
 
 void client::EditorScene::update(float deltaTime)
@@ -50,7 +59,6 @@ void client::EditorScene::render(SDL_Renderer *renderer)
 {
     SDL_SetRenderLogicalPresentation(renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
     updateLayout(renderer);
-    _buttons.render(renderer);
     DrawHeader();
     DrawMonsterPalette();
     DrawViewport();
@@ -72,7 +80,7 @@ void client::EditorScene::updateLayout(SDL_Renderer *renderer)
     _waveTop = _vpMin.y + RULER_H + WAVE_MARGIN_TOP;
 }
 
-/* ========================= Panneaux ========================= */
+// -------- Drawing function ---------- //
 
 void client::EditorScene::DrawHeader()
 {
@@ -102,13 +110,9 @@ void client::EditorScene::DrawHeader()
         ImGui::TextUnformatted("(Unsaved)");
     }
 
-    //ImGui::SameLine();
+    ImGui::Dummy(ImVec2(0, 10.0f));
     ImGui::SetNextItemWidth(MUSIC_COMBO_W);
-
-    // texte affiché quand le menu est fermé
-    std::string preview = _levelData.music.empty()
-        ? "Music: none"
-        : fileName(_levelData.music);
+    std::string preview = _levelData.music.empty() ? "Music: none" : fileName(_levelData.music);
 
     if (ImGui::BeginCombo("##music", preview.c_str())) {
         if (ImGui::Selectable("(none)", _levelData.music.empty())) {
@@ -126,13 +130,9 @@ void client::EditorScene::DrawHeader()
         }
         ImGui::EndCombo();
     }
-    if (ImGui::IsItemHovered() && !_levelData.music.empty())
-        ImGui::SetTooltip("%s", _levelData.music.c_str());
-
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(MUSIC_COMBO_W);
-    
     if (ImGui::BeginCombo("##background", preview.c_str())) {
         ImGui::EndCombo();
     }
@@ -150,18 +150,19 @@ void client::EditorScene::DrawMonsterPalette()
         addWave();
     ImGui::SameLine();
     if (ImGui::Button("Refresh")) {
+        SDL_Log("refresh %s", SDL_GetBasePath());
         LoadScript();
         LoadBoss();
+        LoadMusic();
     }
     ImGui::Separator();
-
     if (ImGui::BeginTabBar("##library")) {
-        if (ImGui::BeginTabItem("Monsters")) {
-            DrawMonsterList();
+        if (ImGui::BeginTabItem("Enemies")) {
+            DrawScriptList(_scriptFiles, "No enemies found");
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Bosses")) {
-            DrawBossList();
+            DrawScriptList(_bossFiles, "No boss found");
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -193,7 +194,7 @@ void client::EditorScene::DrawProperties()
     }
 
     ImGui::Separator();
-    ImGui::Text("Monsters :");
+    ImGui::Text("Enemies :");
 
     int toRemove = -1;
     for (size_t i = 0; i < wave.spawns.size(); ++i) {
@@ -248,9 +249,7 @@ void client::EditorScene::DrawViewport()
     if (isMouseInViewport() && ImGui::IsWindowHovered()
         && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         _selectedWave = -1;
-
     drawWaves(dl);
-    drawBoss(dl);
 
     ImGui::End();
     dl->PopClipRect();
@@ -324,14 +323,21 @@ void client::EditorScene::drawWaves(ImDrawList *dl)
     }
 }
 
-void client::EditorScene::drawBoss(ImDrawList *dl)
+void client::EditorScene::DrawScriptList(const std::vector<std::string> &files, const char *emptyText)
 {
-    if (_levelData.boss.trigger_x <= 0)
-        return;
-
-    float bx = toScreen((float)_levelData.boss.trigger_x);
-    dl->AddLine(ImVec2(bx, _waveTop), ImVec2(bx, _waveTop + WAVE_H), COL_BOSS, 3.0f);
-    dl->AddText(ImVec2(bx + TEXT_PAD_X, _waveTop), COL_BOSS, "Boss");
+    if (files.empty())
+        ImGui::TextDisabled("%s", emptyText);
+    for (const auto &path : files) {
+        std::string name = fileName(path);
+        ImGui::PushID(path.c_str());
+        ImGui::Button(name.c_str(), ImVec2(-1, MONSTER_BTN_H));
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload(PAYLOAD_ENEMY, path.c_str(), path.size() + 1);
+            ImGui::TextUnformatted(name.c_str());
+            ImGui::EndDragDropSource();
+        }
+        ImGui::PopID();
+    }
 }
 
 bool client::EditorScene::isMouseInViewport() const
@@ -348,16 +354,11 @@ float client::EditorScene::toScreen(float worldX) const
 bool client::EditorScene::Save(const std::string &path)
 {
     if (!jsonHandler::Save(path, _levelData))
-    {
-        _statusMessage = "Error : can't open";
         return false;
-    }
 
     _modified = false;
-    _statusMessage = "Save";
     return true;
 }
-
 
 void client::EditorScene::SaveAs()
 {
@@ -411,6 +412,13 @@ void client::EditorScene::addSpawn(int waveIndex, const std::string &script)
     _modified = true;
 }
 
+//---------- Load function ---------------//
+
+void client::EditorScene::LoadLevel()
+{
+    _levelData = jsonHandler::LoadLevel(_levelPath);
+}
+
 void client::EditorScene::LoadMusic()
 {
     _musicFiles.clear();
@@ -432,14 +440,14 @@ void client::EditorScene::LoadMusic()
     std::sort(_musicFiles.begin(), _musicFiles.end());
 }
 
-void client::EditorScene::scanLua(const std::string &folder, std::vector<std::string> &out)
+void client::EditorScene::loadLua(const std::string &folder, std::vector<std::string> &out)
 {
     out.clear();
     const char *base = SDL_GetBasePath();
     std::filesystem::path root = base ? base : "./";
     std::filesystem::path dir = root / folder;
-
     std::error_code ec;
+
     if (!std::filesystem::is_directory(dir, ec)) {
         SDL_Log("[editor] dossier introuvable : %s", dir.string().c_str());
         return;
@@ -453,40 +461,12 @@ void client::EditorScene::scanLua(const std::string &folder, std::vector<std::st
     std::sort(out.begin(), out.end());
 }
 
-void client::EditorScene::LoadScript() { scanLua("assets/scripts", _scriptFiles); }
-void client::EditorScene::LoadBoss()   { scanLua("assets/bosses",  _bossFiles); }
-
-
-void client::EditorScene::DrawMonsterList()
+void client::EditorScene::LoadScript()
 {
-    if (_scriptFiles.empty())
-        ImGui::TextDisabled("No monster found");
-    for (const auto &path : _scriptFiles) {
-        std::string name = fileName(path);
-        ImGui::PushID(path.c_str());
-        ImGui::Button(name.c_str(), ImVec2(-1, MONSTER_BTN_H));
-        if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload(PAYLOAD_ENEMY, path.c_str(), path.size() + 1);
-            ImGui::TextUnformatted(name.c_str());
-            ImGui::EndDragDropSource();
-        }
-        ImGui::PopID();
-    }
+    loadLua("assets/scripts/enemy", _scriptFiles);
 }
 
-void client::EditorScene::DrawBossList()
+void client::EditorScene::LoadBoss()
 {
-    if (_bossFiles.empty())
-        ImGui::TextDisabled("No boss found");
-    for (const auto &path : _bossFiles) {
-        std::string name = fileName(path);
-        ImGui::PushID(path.c_str());
-        ImGui::Button(name.c_str(), ImVec2(-1, MONSTER_BTN_H));
-        if (ImGui::BeginDragDropSource()) {
-            ImGui::SetDragDropPayload(PAYLOAD_ENEMY, path.c_str(), path.size() + 1);
-            ImGui::TextUnformatted(name.c_str());
-            ImGui::EndDragDropSource();
-        }
-        ImGui::PopID();
-    }
+    loadLua("assets/scripts/boss",  _bossFiles);
 }

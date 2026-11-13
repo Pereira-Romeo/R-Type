@@ -14,7 +14,6 @@
 #include <SDL3/SDL.h>
 #include <math.h>
 #include <set>
-#include <cstdlib>
 
 inline bool onScreen(const Position &pos, const Hitbox &box, float screenW, float screenH)
 {
@@ -115,7 +114,10 @@ inline void renderSystem(ecs::Registry &reg, SDL_Renderer *renderer, client::Tex
         if (spr.srcW > 0)
             src = {spr.srcX, spr.srcY, spr.srcW, spr.srcH};
         else
-            src = {spr.col * spr.frameW, spr.row * spr.frameH, spr.frameW, spr.frameH};
+            src = {spr.offsetX + spr.col * spr.frameW,
+                spr.offsetY + spr.row * spr.frameH,
+                spr.frameW, spr.frameH};
+
         SDL_FRect dst = {pos.x, pos.y, box.w, box.h}; // sprite calé sur la hitbox
         SDL_RenderTexture(renderer, tex, &src, &dst);
     }
@@ -159,6 +161,13 @@ inline bool overlaps(const Position &pa, const Hitbox &ba, const Position &pb, c
              pa.y + ba.h <= pb.y || pa.y >= pb.y + bb.h);
 }
 
+inline bool overlapsRel(const Position &p, const Hitbox &b, const Position &owner, const Rect &r)
+{
+    return overlaps(p, b, Position{owner.x + r.x, owner.y + r.y}, Hitbox{r.w, r.h});
+}
+
+
+
 inline void collisionSystem(ecs::Registry &reg, float dt)
 {
     auto toDestroy = std::set<size_t>{};
@@ -170,10 +179,34 @@ inline void collisionSystem(ecs::Registry &reg, float dt)
         for (auto enemy : reg.view<Position, Hitbox, Enemy>()) {
             auto &epos = reg.get<Position>(enemy);
             auto &ebox = reg.get<Hitbox>(enemy);
+            auto &stat = reg.get<Stat>(enemy);
 
-            if (overlaps(bpos, bbox, epos, ebox)) {
-                toDestroy.insert(bullet);
-                toDestroy.insert(enemy);
+            if (!overlaps(bpos, bbox, epos, ebox))
+                continue;
+
+            bool hitWeak = true;
+            bool hitSolid = true; 
+            if (reg.has<Hurtbox>(enemy)) {
+                hitWeak = overlapsRel(bpos, bbox, epos, reg.get<Hurtbox>(enemy));
+                if (reg.has<Solids>(enemy)) {
+                    hitSolid = false;
+                    for (auto &r: reg.get<Solids>(enemy).rects)
+                        if (overlapsRel(bpos, bbox, epos, r)) {
+                            hitSolid = true;
+                            break;
+                        }
+                }
+            }
+            if (!hitWeak && !hitSolid)
+                continue;
+            
+            toDestroy.insert(bullet);
+            if (hitWeak) {
+                stat.life -= 40;
+                if (stat.life <= 0) {
+                    stat.life = 0;
+                    toDestroy.insert(enemy);
+                }
             }
         }
     }
@@ -185,17 +218,33 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
 {
     auto toDestroy = std::set<size_t>{};
 
-    for (auto player : reg.view<Position, Hitbox, Controllable>()) {
+    for (auto player : reg.view<Position, Hitbox, Controllable, Shooter>()) {
         auto &ppos = reg.get<Position>(player);
         auto &pbox = reg.get<Hitbox>(player);
+        auto &pshoot = reg.get<Shooter>(player);
 
         for (auto enemy : reg.view<Position, Hitbox, Enemy>()) {
             auto &epos = reg.get<Position>(enemy);
             auto &ebox = reg.get<Hitbox>(enemy);
 
-            if (overlaps(ppos, pbox, epos, ebox)) {
+            if (reg.has<BossMotion>(enemy)) {
+                for (auto &r: reg.get<Solids>(enemy).rects)
+                    if (overlapsRel(ppos, pbox, epos, r)) {
+                        toDestroy.insert(player);
+                        break;
+                    }
+            } else if (overlaps(ppos, pbox, epos, ebox)) {
                 toDestroy.insert(player);
                 toDestroy.insert(enemy);
+            }
+        }
+        for (auto powerup: reg.view<Position, Hitbox, PowerUp>()) {
+            auto &upos = reg.get<Position>(powerup);
+            auto &ubox = reg.get<Hitbox>(powerup);
+
+            if (overlaps(ppos, pbox, upos, ubox)) {
+                pshoot.weapon = "spread";
+                toDestroy.insert(powerup);
             }
         }
     }
@@ -205,9 +254,14 @@ inline void playerHitSystem(ecs::Registry &reg, float dt)
         auto &bbox = reg.get<Hitbox>(bullet);
 
         for (auto player : reg.view<Position, Hitbox, Controllable>()) {
+            auto &stat = reg.get<Stat>(player);
             if (overlaps(bpos, bbox, reg.get<Position>(player), reg.get<Hitbox>(player))) {
+                stat.life -= 10;
+                if (stat.life < 0) {
+                    stat.life = 0;
+                    toDestroy.insert(player);
+                }
                 toDestroy.insert(bullet);
-                toDestroy.insert(player);
             }
         }
     }
@@ -239,12 +293,14 @@ inline void animationSystem(ecs::Registry &reg, float dt, float screenW, float s
         anim.timer += dt;
         while (anim.timer >= anim.frameTime) {
             anim.timer -= anim.frameTime;
-            if (anim.index + 1 < anim.frames) {
+            int last = anim.loopTo >= 0 ? anim.loopTo : anim.frames - 1;
+            if (anim.index < last) {
                 anim.index++;
-                if (anim.index == anim.frames - 1)
+                if (anim.index == last)
                     anim.finishedCycle = true;
-            } else if (anim.loop)
-                anim.index = 0;
+            } else if (anim.loop) {
+                anim.index = anim.loopFrom;
+            }
         }
         spr.col = anim.index % anim.cols;
         spr.row = anim.index / anim.cols;
@@ -268,3 +324,90 @@ inline void enemyShootingSystem(ecs::Registry &reg, float, ScriptEngine &se, flo
     for (auto &s : shots)
         se.fireWeapon(s.weapon, s.x, s.y);
 }
+
+inline void drawBar(SDL_Renderer *renderer, const HealthBar &bar)
+{
+    float ratio = std::clamp(bar.ratio, 0.f, 1.f);
+
+    SDL_FRect bg = {bar.x, bar.y, bar.w, bar.h};
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
+    SDL_RenderFillRect(renderer, &bg);
+
+    if (ratio > 0.f) {
+        SDL_FRect fg = {bar.x, bar.y, bar.w * ratio, bar.h};
+        SDL_SetRenderDrawColor(renderer, bar.r, bar.g, bar.b, 255);
+        SDL_RenderFillRect(renderer, &fg);
+    }
+}
+
+inline void healthBarSystem(ecs::Registry &reg, SDL_Renderer *renderer)
+{
+    if (!renderer)
+        return;
+
+    // unit health bar
+    for (auto ent : reg.view<Stat, Position, Hitbox>()) {
+        auto &stat = reg.get<Stat>(ent);
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+        if (stat.lifeMax <= 0.f)
+            continue;
+        float ratio = stat.life / stat.lifeMax;
+        if (reg.has<Enemy>(ent))
+            drawBar(renderer, {pos.x, pos.y - 8.f, box.w, 4.f, ratio, 220, 30, 30});
+        else if (reg.has<Controllable>(ent))
+            drawBar(renderer, {pos.x, pos.y - 8.f, box.w, 4.f, ratio, 40, 220, 60});
+    }
+
+    // Player HUD health bar
+    float y = 10.f;
+    for (auto ent : reg.view<Stat, Controllable>()) {
+        auto &stat = reg.get<Stat>(ent);
+        if (stat.lifeMax <= 0.f)
+            continue;
+        drawBar(renderer, {10.f, y, 200.f, 16.f, stat.life / stat.lifeMax, 40, 220, 60});
+        y += 22.f;
+    }
+}
+
+inline void bossMotionSystem(ecs::Registry &reg, float dt)
+{
+    for (auto ent: reg.view<Position, BossMotion>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &bm = reg.get<BossMotion>(ent);
+
+        if (pos.x > bm.stopX) {
+            pos.x = std::max(bm.stopX, pos.x - bm.enterSpeed * dt);
+        } else {
+            bm.t += dt;
+            pos.y = bm.baseY + bm.amp * std::sin(bm.t * bm.speed);
+        }
+    }
+}
+
+inline void bossShootingSystem(ecs::Registry &reg, float dt, ScriptEngine &se, float screenW, float screenH)
+{
+    auto shots = std::vector<wts>{};
+
+    for (auto ent : reg.view<BossShooter, Animation, Position, Hitbox>()) {
+        auto &pos = reg.get<Position>(ent);
+        auto &box = reg.get<Hitbox>(ent);
+        auto &bs  = reg.get<BossShooter>(ent);
+
+        if (!onScreen(pos, box, screenW, screenH))
+            continue;
+        if (reg.get<Animation>(ent).index < bs.activeFromFrame)
+            continue; // not arrived to the desired frame
+        for (auto &g : bs.shooters) {
+            g.cooldown -= dt;
+            if (g.cooldown <= 0.f) {
+                shots.push_back({g.weapon, pos.x + g.ox, pos.y + g.oy});
+                g.cooldown = g.interval;
+            }
+        }
+    }
+    for (auto &s : shots)
+        se.fireWeapon(s.weapon, s.x, s.y);
+}
+

@@ -29,14 +29,6 @@ namespace jsonHandler {
     } wave_t;
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(wave_s, name, start_x, length, spawns)
 
-    // typedef struct boss_s {
-    //     int trigger_x = 0;
-    //     std::string preset;
-    //     std::string sprite;
-    //     std::string script;
-    // } boss_t;
-    // NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(boss_s, trigger_x, preset, sprite, script)
-
     typedef struct levelData_s {
         std::string name;
         std::string background;

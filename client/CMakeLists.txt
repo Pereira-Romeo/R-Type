@@ -38,6 +38,8 @@ ${CMAKE_SOURCE_DIR}
 )
 
 target_compile_definitions(r-type_client PRIVATE ASIO_STANDALONE)
+target_compile_definitions(r-type_client PRIVATE
+    $<$<CONFIG:Debug>:ASSETS_ROOT="${CMAKE_SOURCE_DIR}">)
 
 target_link_libraries(r-type_client PRIVATE
         project_options
@@ -52,5 +54,5 @@ target_link_libraries(r-type_client PRIVATE
 )
 
 add_custom_command(TARGET r-type_client POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:r-type_client>/assets)

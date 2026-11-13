@@ -42,6 +42,12 @@ namespace client
         _registry.register_component<Sprite>();
         _registry.register_component<EnemyShooter>();
         _registry.register_component<EnemyProjectile>();
+        _registry.register_component<Stat>();
+        _registry.register_component<Hurtbox>();
+        _registry.register_component<BossMotion>();
+        _registry.register_component<BossShooter>();
+        _registry.register_component<Solids>();
+        _registry.register_component<PowerUp>();
         _registry.register_component<Projectile>();
         _registry.register_component<Enemy>();
 
@@ -75,7 +81,10 @@ namespace client
         _schedule.add(Bucket::Update, "enemy shooting", [this](ecs::Registry &reg, float dt) {
             enemyShootingSystem(reg, dt, *_scriptEngine, _screenWidth, _screenHeight);
         });
-
+        _schedule.add(Bucket::Update, "boss motion", bossMotionSystem);
+        _schedule.add(Bucket::Update, "boss shooting", [this](ecs::Registry &reg, float dt) {
+            bossShootingSystem(reg, dt, *_scriptEngine, _screenWidth, _screenHeight);
+        });
 
         // ===== PHYSIQUE =====
         _schedule.add(Bucket::Physique, "delete player", playerHitSystem);
@@ -92,6 +101,7 @@ namespace client
         // ===== RENDER =====
         _schedule.add(Bucket::Rendu, "render", [this](ecs::Registry &reg, float dt) {
             renderSystem(reg, _renderer, _textures, _screenWidth, _screenHeight);
+            healthBarSystem(reg, _renderer);
         });
     }
 
@@ -116,6 +126,15 @@ namespace client
 
         se.registerComponent("position", [this](size_t e, const sol::table &t) {
             _registry.add<Position>(e, t.get_or("x", 0.f), t.get_or("y", 0.f));
+        });
+        se.registerComponent("stat", [this](size_t e, const sol::table &t) {
+            float life = t.get_or("life", 100.0f);
+            float lifeMax = t.get_or("lifeMax", 100.0f);
+            if (lifeMax <= 0)
+                lifeMax = 100;
+            if (life > lifeMax)
+                life = lifeMax;
+            _registry.add<Stat>(e, life, lifeMax);
         });
         se.registerComponent("velocity", [this](size_t e, const sol::table &t) {
             _registry.add<Velocity>(e, t.get_or("x", 0.f), t.get_or("y", 0.f));
@@ -149,7 +168,8 @@ namespace client
                 t.get_or("w", 0.f),
                 t.get_or("h", 0.f),
             };
-
+            s.offsetX = t.get_or("offset_x", 0.f);
+            s.offsetY = t.get_or("offset_y", 0.f);
             sol::optional<sol::table> src = t["src"];
             if (src) {
                 s.srcX = src->get_or("x", 0.f);
@@ -166,6 +186,8 @@ namespace client
             anim.cols = t.get_or("cols", 1);
             anim.frameTime = 1.f / t.get_or("fps", 10.f);
             anim.loop = t.get_or("loop", true);
+            anim.loopFrom = t.get_or("loop_from", 0);
+            anim.loopTo = t.get_or("loop_to", -1);
             _registry.add<Animation>(e, std::move(anim));
         });
         se.registerComponent("enemy_shooter", [this](size_t e, const sol::table &t) {
@@ -175,6 +197,58 @@ namespace client
             _registry.add<EnemyProjectile>(e);
         });
 
+        se.registerComponent("hurtbox", [this](size_t e, const sol::table &t) {
+            _registry.add<Hurtbox>(e,
+                t.get_or("x", 0.f),
+                t.get_or("y", 0.f),
+                t.get_or("w", 0.f),
+                t.get_or("h", 0.f)
+            );
+        });
+        se.registerComponent("boss_motion", [this](size_t e, const sol::table &t) {
+            BossMotion b;
+            b.stopX = t.get_or("stop_x", 0.f);
+            b.enterSpeed = t.get_or("enter_speed", 100.f);
+            b.baseY = t.get_or("base_y", 0.f);
+            b.amp = t.get_or("amp", 80.f);
+            b.speed = t.get_or("speed", 1.5f);
+            _registry.add<BossMotion>(e, std::move(b));
+        });
+
+        se.registerComponent("boss_shooter", [this](size_t e, const sol::table &t) {
+            BossShooter bs;
+            bs.activeFromFrame = t.get_or("active_from", 0);
+
+            sol::optional<sol::table> shooters = t["shooters"];
+            if (shooters) {
+                for (auto &kv : *shooters) {
+                    sol::table g = kv.second;
+                    Shooter shooter;
+                    shooter.weapon = g.get_or("weapon", std::string("enemy_basic"));
+                    shooter.ox = g.get_or("x", 0.f);
+                    shooter.oy = g.get_or("y", 0.f);
+                    shooter.interval = g.get_or("interval", 1.f);
+                    shooter.cooldown = g.get_or("delay", 0.f);
+                    bs.shooters.push_back(std::move(shooter));
+                }
+            }
+            _registry.add<BossShooter>(e, std::move(bs));
+        });
+
+        se.registerComponent("solids", [this](size_t e, const sol::table &t) {
+            Solids s;
+            for (auto &kv : t) {
+                sol::table r = kv.second;
+                s.rects.push_back({
+                    r.get_or("x", 0.f),
+                    r.get_or("y", 0.f),
+                    r.get_or("w", 0.f),
+                    r.get_or("h", 0.f)
+                });
+            }
+            _registry.add<Solids>(e, std::move(s));
+        });
+
         // tags
         se.registerComponent("enemy", [this](size_t e, const sol::table &) {
             _registry.add<Enemy>(e);
@@ -182,6 +256,9 @@ namespace client
 
         se.registerComponent("projectile", [this](size_t e, const sol::table &) {
             _registry.add<Projectile>(e);
+        });
+        se.registerComponent("powerup", [this](size_t e, const sol::table &) {
+            _registry.add<PowerUp>(e);
         });
     }
 
