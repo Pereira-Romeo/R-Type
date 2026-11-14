@@ -104,3 +104,22 @@ void FrameBufferHandler::Write(int frame, std::string data)
         slot = {frame, std::vector<std::string>()};
     slot.datas.emplace_back(std::move(data));
 }
+
+//send a copie of desire frame
+std::vector<std::string> FrameBufferHandler::Peek(int frame) const
+{
+    if (frame < 0 || frame < _history || frame > _write)
+        return {};
+    const frameData_t &slot = framesBuff[frame % MAX_FRAMES];
+    if (slot.frame == frame)
+        return slot.datas;
+}
+
+void FrameBufferHandler::Reset()
+{
+    framesBuff = {};
+    _read = 0;
+    _write = DELAY;
+    _currFrame = 0;
+    _history = 0;
+}

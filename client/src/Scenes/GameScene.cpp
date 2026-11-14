@@ -60,8 +60,19 @@ namespace client
 
         // ===== INPUT =====
         _schedule.add(Bucket::Input, "input", [this](ecs::Registry &reg, float) {
-            inputSystem(reg, _gamepad);
+            if (_players[_localId] && !reg.has<InputState>(*_players[_localId]))
+                _players[_localId].reset();
+            if (!_players[_localId]) {
+                for (auto ent : reg.view<Controllable, InputState>()) {
+                    _players[_localId] = ent;
+                    break;
+                }
+            }
+            for (std::size_t id = 0; id < _players.size(); ++id)
+                if (_players[id] && reg.has<InputState>(*_players[id]))
+                    reg.get<InputState>(*_players[id]) = _inputs[id];
         });
+
 
         // ===== UPDATE =====
         _schedule.add(Bucket::Update, "update control", controlSystem);
@@ -113,6 +124,11 @@ namespace client
         _renderer = nullptr;
         _spawnTimer = 0.f;
         _playerSeen = false;
+        _frameBuffer.Reset();
+        _accumulator = 0.f;
+        _replayFrom = -1;
+        _inputs = {};
+        _players = {};
     }
 
     void GameScene::registerLuaComponents()
@@ -264,9 +280,23 @@ namespace client
 
     void GameScene::update(float deltaTime)
     {
-        _scriptEngine.get()->update(deltaTime);
-        _schedule.run(_registry, deltaTime, Bucket::Input, Bucket::Fin);
-        
+        if (_replayFrom >= 0) {
+            rollback(_replayFrom);
+            _replayFrom = -1;
+        }
+
+        _accumulator += deltaTime;
+        while (_accumulator >= TICK) {
+            const std::uint8_t mask = sampleLocalMask();
+            _frameBuffer.Delay(encodeInput(_localId, mask));
+            // network send input  (quand le netwok exeistera)
+
+            overrideOverrides(_frameBuffer.Read());
+            runTick();
+            _frameBuffer.updateFrame();
+            _accumulator -= TICK;
+            std::cout << (int)mask << std::endl;
+        }
         bool alive = false;
         for (auto ent : _registry.view<Controllable>()) {
             (void)ent;
@@ -286,5 +316,87 @@ namespace client
             _schedule.run(_registry, 0.0f, Bucket::Rendu, Bucket::Rendu);
         });
     }
-}
 
+
+    std::string GameScene::encodeInput(std::uint8_t id, std::uint8_t mask)
+    {
+        return std::to_string(id) + ":" + std::to_string(mask);
+    }
+
+    std::uint8_t GameScene::sampleLocalMask() const
+    {
+        const bool *keys = SDL_GetKeyboardState(nullptr);
+        auto pad = [this](SDL_GamepadButton b) { return _gamepad && SDL_GetGamepadButton(_gamepad, b); };
+        std::uint8_t mask = 0;
+        // ==== UP ====
+        if (keys[SDL_SCANCODE_UP] || keys[SDL_SCANCODE_W] || pad(SDL_GAMEPAD_BUTTON_DPAD_UP))
+            mask |= proto::INPUT_UP;
+        
+        // ==== DOWN ====
+        if (keys[SDL_SCANCODE_DOWN] || keys[SDL_SCANCODE_S] || pad(SDL_GAMEPAD_BUTTON_DPAD_DOWN))
+            mask |= proto::INPUT_DOWN;
+        
+        // ==== LEFT ====
+        if (keys[SDL_SCANCODE_LEFT] || keys[SDL_SCANCODE_A] || pad(SDL_GAMEPAD_BUTTON_DPAD_LEFT))
+            mask |= proto::INPUT_LEFT;
+        
+        // ==== RIGHT ====
+        if (keys[SDL_SCANCODE_RIGHT] || keys[SDL_SCANCODE_D] || pad(SDL_GAMEPAD_BUTTON_DPAD_RIGHT))
+            mask |= proto::INPUT_RIGHT;
+        
+        // ==== SHOOT ====
+        if (keys[SDL_SCANCODE_SPACE] || pad(SDL_GAMEPAD_BUTTON_SOUTH))
+            mask |= proto::INPUT_SHOOT;
+        return mask;
+    }
+
+    void GameScene::overrideOverrides(const std::vector<std::string> &datas)
+    {
+        for (const auto &d : datas) {
+            int id = 0;
+            int mask = 0;
+            auto sep = d.find(':');
+
+            if (sep == std::string::npos)
+                continue;
+            try {
+                id = std::stoi(d.substr(0, sep));
+                mask = std::stoi(d.substr(sep + 1));
+            } catch (...) {
+                continue;
+            }
+            if (id < 0 || id >= (int)proto::MAX_PLAYERS)
+                continue;
+            auto &in = _inputs[id];
+            in.up = mask & proto::INPUT_UP;
+            in.down = mask & proto::INPUT_DOWN;
+            in.left = mask & proto::INPUT_LEFT;
+            in.right = mask & proto::INPUT_RIGHT;
+            in.shoot = mask & proto::INPUT_SHOOT;
+        }
+    }
+
+    void GameScene::onServerMessage(frameData_t data)
+    {
+        const int frame = data.frame;
+        const bool inWindow = _frameBuffer.Rollback(std::move(data));
+        if (inWindow && frame < _frameBuffer.CurrFrame())
+            _replayFrom = (_replayFrom < 0) ? frame : std::min(_replayFrom, frame);
+    }
+
+    void GameScene::runTick()
+    {
+        _scriptEngine->update(TICK);
+        _schedule.run(_registry, TICK, Bucket::Input, Bucket::Fin);
+    }
+
+    void GameScene::rollback(int fromFrame)
+    {
+        for (int f = fromFrame; f < _frameBuffer.CurrFrame(); ++f) {
+            overrideOverrides(_frameBuffer.Peek(f));
+            runTick();
+        }
+    }
+
+
+}

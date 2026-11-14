@@ -38,4 +38,7 @@ class FrameBufferHandler {
         std::vector<std::string> Read();
         void Write(int frame, std::string data);
         void Display();
+        std::vector<std::string> Peek(int frame) const;
+        int CurrFrame() const {return _currFrame;}
+        void Reset();
 };
